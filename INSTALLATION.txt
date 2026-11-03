@@ -1,31 +1,15 @@
-G.I.B. CONNECT — CORRECTIF V0.9.1
+G.I.B. CONNECT V0.9.2 — Membre et grades dans les messages
 
-1. Dans Firebase : Firestore Database > Règles.
-Remplacer le contenu par TOUT le contenu de REGLES_FIREBASE.txt, puis cliquer sur Publier.
-Conserver la base, les utilisateurs Authentication et le document access du compte principal.
+Si V0.9.1 est déjà installée : aucune modification de Firebase nécessaire.
+1. Décompresser le ZIP.
+2. Dans le dépôt GitHub existant : Add file > Upload files.
+3. Déposer tous les fichiers et dossiers du ZIP au même niveau que index.html, puis Commit changes.
+4. Attendre le déploiement terminé et actualiser l’application avec Ctrl+F5.
+Ne supprimer ni le dépôt ni les données.
 
-2. Décompresser ce ZIP sur l’ordinateur.
-Dans le dépôt GitHub existant : Add file > Upload files.
-Glisser tous les fichiers et dossiers contenus dans le ZIP, au même niveau que index.html.
-Ne pas déposer le ZIP lui-même ni un dossier parent supplémentaire.
-Valider avec Commit changes. Les fichiers de même nom sont remplacés : ne pas supprimer le dépôt.
+Le menu s’appelle désormais Membre. Les outils d’invitation restent disponibles dans cette page.
+Le grade attribué apparaît avant le pseudo dans les messages, y compris les messages déjà envoyés.
+Exemple : Caporal NITRO. Sans grade attribué, seul le pseudo apparaît.
+Le grade se met à jour à partir du profil partagé ; il n’est pas saisi librement par l’auteur du message.
 
-3. Attendre que le déploiement GitHub Pages soit terminé, puis ouvrir l’application et faire Ctrl+F5.
-Si l’ancienne version reste affichée, fermer tous les onglets de l’application puis rouvrir le lien.
-
-CORRECTIONS
-- Logo original intégré directement dans les pages et icônes, sans redessin.
-- Polices et camouflage intégrés : ils ne dépendent plus du chargement des dossiers assets/icons.
-- Membres et Cotisations : deux pages distinctes, accessibles par le menu en haut à gauche.
-- Cotisations : 15 €/mois ou 150 €/an ; HelloAsso, virement, espèces, chèque.
-- Compte principal conservé ; quatre places de modérateurs dans Profil.
-- Le compte principal invite chaque modérateur par son adresse e-mail. Aucune personne fictive créée.
-- Les modérateurs disposent des outils de gestion ; seul le compte principal gère leurs accès.
-- Pour libérer une place : Profil > Compte principal et modérateurs. Le compte redevient membre.
-- Les invitations n’envoient pas d’e-mail automatique : transmettre le lien de l’application.
-- Un membre déjà inscrit invité comme modérateur doit se déconnecter puis se reconnecter.
-
-Ne jamais supprimer les collections ni les comptes existants pour effectuer cette mise à jour.
-La synchronisation nécessite Internet. Les conversations privées restent réservées à leurs participants.
-
-Si des anciens comptes avaient le rôle technique admin sans place de modérateur, ils doivent être réaffectés par le compte principal : dans Firestore access/UID, mettre role à member et enabled à true, puis les inviter comme modérateurs depuis l’application. Ne pas modifier le compte owner.
+Si vous venez d’une version antérieure à V0.9.1 : publier d’abord le contenu de REGLES_FIREBASE.txt dans Firebase > Firestore Database > Règles. Conserver les comptes et les données existants.

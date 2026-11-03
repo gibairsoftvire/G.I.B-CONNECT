@@ -1,3 +1,3 @@
-# G.I.B. CONNECT V0.9.1
+# G.I.B. CONNECT V0.9.2
 
-Voir INSTALLATION.txt pour la mise à jour. Ce correctif nécessite de publier les règles fournies avant de remplacer les fichiers GitHub. Les données existantes sont conservées.
+Menu Membre et grade avant le pseudo dans les messages. Voir INSTALLATION.txt. Règles Firebase identiques à V0.9.1.
