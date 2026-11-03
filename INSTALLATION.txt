@@ -1,22 +1,30 @@
-G.I.B. CONNECT V0.9.5 — INSTALLATION SUR TELEPHONE
+G.I.B. CONNECT V0.9.6 — SIX MODERATEURS ET COTISATIONS
 
-MISE A JOUR GITHUB
-Décompresser le ZIP. Dans le dépôt GitHub existant : Add file > Upload files. Déposer tout le contenu au même niveau que index.html, y compris install.js, sw.js, manifest.webmanifest et les trois fichiers app-icon. Valider avec Commit changes.
-Attendre le déploiement GitHub Pages, puis actualiser avec Ctrl+F5.
-Depuis V0.9.1 ou supérieure, aucune modification Firebase nécessaire. Depuis une version plus ancienne, publier d’abord REGLES_FIREBASE.txt dans Firestore > Règles. Ne supprimer ni données ni utilisateurs.
+MISE A JOUR — DANS CET ORDRE
+1. Dans Firebase > Firestore Database > Règles : remplacer toutes les règles par le contenu de REGLES_FIREBASE.txt, puis Publier.
+2. Décompresser ce ZIP et déposer tout son contenu dans le dépôt GitHub existant avec Add file > Upload files > Commit changes. Garder index.html au même niveau. Ne déposer ni le ZIP ni un dossier parent.
+3. Attendre le déploiement, fermer et rouvrir l’application installée. Sur ordinateur, actualiser avec Ctrl+F5.
+Ne supprimer ni les comptes Authentication, ni les données Firestore, ni le dépôt GitHub. Les quatre places existantes sont conservées.
 
-INSTALLER SUR ANDROID / GALAXY TAB
-Ouvrir https://gibairsoftvire.github.io/G.I.B-CONNECT/ dans Chrome.
-Cliquer sur Installer l’application (page de connexion ou Profil), puis confirmer.
-Si le navigateur ne propose pas la fenêtre : menu trois points > Installer l’application ou Ajouter à l’écran d’accueil. Ne pas ouvrir le lien dans le navigateur intégré de Messenger.
+SIX MODERATEURS AU TOTAL
+Le compte principal reste distinct des six places (deux supplémentaires).
+Dans Profil, choisir Mode d’utilisation > Modérateur.
+- Pour une nouvelle personne : Membre > Inviter un modérateur. Transmettre soi-même le lien à l’adresse autorisée ; pas d’e-mail automatique.
+- Pour un membre déjà inscrit : Membre > Promouvoir modérateur, puis confirmer. Le compte, son pseudo, son grade et ses messages sont conservés. Le membre promu peut fermer puis rouvrir l’application ou se reconnecter pour charger ses nouveaux droits.
+- Dans Profil > Compte principal et modérateurs, six places sont affichées. Libérer une place retire les droits de modération et conserve le compte membre.
+Seul le compte principal attribue/retire les places, uniquement depuis le mode Modérateur. Un membre ordinaire ne peut jamais s’attribuer ces droits. Une septième place est refusée côté Firebase.
 
-IPHONE / IPAD
-Ouvrir le lien dans Safari. Partager > Sur l’écran d’accueil > Ajouter. Si proposé, activer Ouvrir comme app web.
+SUSPENDRE POUR COTISATION NON VALIDEE
+Dans le mode Modérateur, ouvrir Cotisations.
+Sur la fiche d’un membre dont la cotisation est absente ou non validée, cliquer Suspendre les accès hors générale puis confirmer.
+Cela suspend : lecture de l’agenda et réponses aux événements ; lecture/vote des sondages ; accès aux anciennes et nouvelles conversations privées et de groupe (historique inclus).
+La conversation G.I.B. Général reste lisible et utilisable. Profil, Cotisations, annonces et terrains restent accessibles.
+La suspension est manuelle : aucun membre n’est suspendu automatiquement au déploiement.
+Le membre retrouve automatiquement les accès dès que la case Cotisation validée est enregistrée par un responsable. Le bouton Lever la suspension permet aussi de retirer la restriction manuellement.
+C’est le statut validée (la case du formulaire) qui détermine cette restriction : les dates de validité restent affichées mais ne déclenchent pas à elles seules une suspension.
+Une suspension conservée redeviendra effective si la validation de cotisation est retirée. Pour arrêter ce suivi, cliquer Lever la suspension.
+Les comptes responsables (principal/modérateurs) conservent leurs accès de gestion ; la suspension vise les comptes ayant le rôle membre.
+Les boutons de promotion et de suspension n’apparaissent pas en mode Membre.
 
-ORDINATEUR
-Ouvrir le lien dans Chrome ou Edge et utiliser le bouton Installer ou l’icône d’installation dans la barre d’adresse.
-
-L’icône G.I.B. lance l’application dans sa propre fenêtre sur les navigateurs compatibles. L’installation est gratuite et ne passe pas par le Play Store ou l’App Store.
-La première ouverture peut nécessiter une nouvelle connexion. Dans l’application installée, la connexion est conservée sur cet appareil jusqu’à déconnexion ou révocation des droits. Se déconnecter sur un appareil partagé.
-Internet reste nécessaire pour Firebase et les données partagées. Les notifications à distance, application fermée, ne sont pas encore activées. L’installation seule ne les active pas.
-Les règles et fonctionnalités de V0.9.4, le logo original, les insignes et le mode Modérateur sont conservés.
+Les restrictions sont appliquées dans Firebase et se répercutent sur les appareils connectés. Les contenus déjà lus ou enregistrés par quelqu’un ne peuvent pas être effacés de sa mémoire ou de ses copies.
+L’installation sur écran d’accueil, le logo original, les insignes de grades et les données existantes sont conservés.

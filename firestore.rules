@@ -3,11 +3,13 @@ service cloud.firestore {
  match /databases/{database}/documents {
   function signed(){return request.auth != null;}
   function access(){return get(/databases/$(database)/documents/access/$(request.auth.uid)).data;}
-  function slotBound(d,uid){return d.role in ['moderator','admin'] && d.slot in ['1','2','3','4'] && get(/databases/$(database)/documents/moderators/$(d.slot)).data.uid==uid;}
-  function slotBoundAfter(d,uid){return d.slot in ['1','2','3','4'] && getAfter(/databases/$(database)/documents/moderators/$(d.slot)).data.uid==uid;}
+  function slotBound(d,uid){return d.role in ['moderator','admin'] && d.slot in ['1','2','3','4','5','6'] && get(/databases/$(database)/documents/moderators/$(d.slot)).data.uid==uid;}
+  function slotBoundAfter(d,uid){return d.slot in ['1','2','3','4','5','6'] && getAfter(/databases/$(database)/documents/moderators/$(d.slot)).data.uid==uid;}
   function enabled(){return signed() && access().enabled == true && (access().role in ['owner','member'] || slotBound(access(),request.auth.uid));}
   function admin(){return enabled() && access().role in ['owner','moderator','admin'];}
   function owner(){return enabled() && access().role == 'owner';}
+  function validated(uid){return exists(/databases/$(database)/documents/memberships/$(uid)) && get(/databases/$(database)/documents/memberships/$(uid)).data.validated==true;}
+  function featureAccess(){return enabled() && (admin() || !exists(/databases/$(database)/documents/restrictions/$(request.auth.uid)) || get(/databases/$(database)/documents/restrictions/$(request.auth.uid)).data.suspended!=true || validated(request.auth.uid));}
   function text(v,n){return v is string && v.size() <= n;}
   function invited(){return signed() && request.auth.token.email_verified == true && exists(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())) && get(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())).data.enabled == true;}
   function invitedRole(){return get(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())).data.role;}
@@ -21,7 +23,7 @@ service cloud.firestore {
    allow delete: if owner() && uid!=request.auth.uid && resource.data.role!='owner';
   }
   match /moderators/{slot} {
-   function valid(){return slot in ['1','2','3','4'] && request.resource.data.keys().hasOnly(['email','uid']) && text(request.resource.data.email,254) && text(request.resource.data.uid,128);}
+   function valid(){return slot in ['1','2','3','4','5','6'] && request.resource.data.keys().hasOnly(['email','uid']) && text(request.resource.data.email,254) && text(request.resource.data.uid,128);}
    allow get: if owner() || (signed() && (resource.data.uid==request.auth.uid || (request.auth.token.email_verified==true && resource.data.email==request.auth.token.email.lower())));
    allow list: if owner();
    allow create: if owner() && valid();
@@ -29,7 +31,7 @@ service cloud.firestore {
    allow delete: if owner();
   }
   match /invitations/{email} {
-   function valid(){return request.resource.data.enabled is bool && ((request.resource.data.role=='member' && request.resource.data.keys().hasOnly(['role','enabled','createdAt'])) || (request.resource.data.role=='moderator' && request.resource.data.keys().hasOnly(['role','enabled','createdAt','slot']) && request.resource.data.slot in ['1','2','3','4'] && getAfter(/databases/$(database)/documents/moderators/$(request.resource.data.slot)).data.email==email));}
+   function valid(){return request.resource.data.enabled is bool && ((request.resource.data.role=='member' && request.resource.data.keys().hasOnly(['role','enabled','createdAt'])) || (request.resource.data.role=='moderator' && request.resource.data.keys().hasOnly(['role','enabled','createdAt','slot']) && request.resource.data.slot in ['1','2','3','4','5','6'] && getAfter(/databases/$(database)/documents/moderators/$(request.resource.data.slot)).data.email==email));}
    allow get: if admin() || (signed() && request.auth.token.email_verified == true && email == request.auth.token.email.lower());
    allow list: if admin();
    allow create, update: if valid() && admin() && (request.resource.data.role=='member' || owner()) && (request.method=='create' || resource.data.role=='member' || owner());
@@ -55,26 +57,32 @@ service cloud.firestore {
    allow list: if admin();
    allow create, update: if admin() && request.resource.data.keys().hasOnly(['period','amount','method','start','end','validated']) && request.resource.data.period in ['mensuelle','annuelle'] && request.resource.data.amount==(request.resource.data.period=='mensuelle'?15:150) && request.resource.data.method in ['especes','cheque','virement','helloasso'] && request.resource.data.start is string && request.resource.data.end is string && request.resource.data.end>=request.resource.data.start && request.resource.data.validated is bool;
   }
+  match /restrictions/{uid} {
+   allow get: if enabled() && (admin() || uid==request.auth.uid);
+   allow list: if admin();
+   allow create, update: if admin() && request.resource.data.keys().hasOnly(['suspended']) && request.resource.data.suspended is bool && (!request.resource.data.suspended || (!validated(uid) && get(/databases/$(database)/documents/access/$(uid)).data.role=='member'));
+   allow delete: if admin();
+  }
   match /events/{id} {
    function validEvent(){return request.resource.data.keys().hasOnly(['name','type','date','time','place','terrainId','capacity','deadline','startsAt','closesAt','yesUids']) && text(request.resource.data.name,120) && request.resource.data.type in ['Partie','Réunion','Aménagement','Autre'] && text(request.resource.data.date,10) && text(request.resource.data.time,5) && text(request.resource.data.place,200) && text(request.resource.data.terrainId,100) && request.resource.data.capacity is int && request.resource.data.capacity>0 && request.resource.data.capacity<=500 && request.resource.data.yesUids is list && request.resource.data.yesUids.size()<=request.resource.data.capacity && request.resource.data.startsAt is timestamp && request.resource.data.closesAt is timestamp && request.resource.data.closesAt<request.resource.data.startsAt && text(request.resource.data.deadline,16);}
-   function ownAttendance(){let before=resource.data.yesUids.toSet();let after=request.resource.data.yesUids.toSet();let r=getAfter(/databases/$(database)/documents/events/$(id)/rsvps/$(request.auth.uid)).data;return enabled() && request.time<resource.data.closesAt && request.time<resource.data.startsAt && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['yesUids']) && request.resource.data.yesUids is list && request.resource.data.yesUids.size()==after.size() && after.size()<=resource.data.capacity && after.difference(before).hasOnly([request.auth.uid]) && before.difference(after).hasOnly([request.auth.uid]) && r.at==request.time && ((r.response=='yes' && request.auth.uid in after) || (r.response=='no' && !(request.auth.uid in after)));}
-   allow read: if enabled();
+   function ownAttendance(){let before=resource.data.yesUids.toSet();let after=request.resource.data.yesUids.toSet();let r=getAfter(/databases/$(database)/documents/events/$(id)/rsvps/$(request.auth.uid)).data;return featureAccess() && request.time<resource.data.closesAt && request.time<resource.data.startsAt && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['yesUids']) && request.resource.data.yesUids is list && request.resource.data.yesUids.size()==after.size() && after.size()<=resource.data.capacity && after.difference(before).hasOnly([request.auth.uid]) && before.difference(after).hasOnly([request.auth.uid]) && r.at==request.time && ((r.response=='yes' && request.auth.uid in after) || (r.response=='no' && !(request.auth.uid in after)));}
+   allow read: if featureAccess();
    allow create: if admin() && validEvent() && request.resource.data.yesUids.size()==0;
    allow update: if (admin() && validEvent() && request.resource.data.yesUids==resource.data.yesUids) || ownAttendance();
    allow delete: if admin();
    match /rsvps/{uid} {
-    allow read: if enabled();
-    allow create, update: if enabled() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['response','at']) && request.resource.data.response in ['yes','no'] && request.resource.data.at==request.time && request.time<get(/databases/$(database)/documents/events/$(id)).data.closesAt && ((request.resource.data.response=='yes' && uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids) || (request.resource.data.response=='no' && !(uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids)));
+    allow read: if featureAccess();
+    allow create, update: if featureAccess() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['response','at']) && request.resource.data.response in ['yes','no'] && request.resource.data.at==request.time && request.time<get(/databases/$(database)/documents/events/$(id)).data.closesAt && ((request.resource.data.response=='yes' && uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids) || (request.resource.data.response=='no' && !(uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids)));
    }
   }
   match /conversations/{id} {
-   function participant(){return enabled() && (resource.data.type=='general' || request.auth.uid in resource.data.participants);}
-   allow get: if participant() || (enabled() && !exists(/databases/$(database)/documents/conversations/$(id)));
+   function participant(){return enabled() && ((id=='general' && resource.data.type=='general') || (featureAccess() && request.auth.uid in resource.data.participants));}
+   allow get: if participant() || (featureAccess() && !exists(/databases/$(database)/documents/conversations/$(id)));
    allow list: if participant();
-   allow create: if enabled() && request.resource.data.keys().hasOnly(['name','type','participants','createdAt']) && text(request.resource.data.name,60) && request.resource.data.createdAt==request.time && request.resource.data.participants is list && request.resource.data.participants.size()<=100 && ((id=='general' && admin() && request.resource.data.type=='general') || (request.resource.data.type=='group' && admin() && request.auth.uid in request.resource.data.participants) || (request.resource.data.type=='private' && request.resource.data.participants.size()==2 && request.resource.data.participants.toSet().size()==2 && request.auth.uid in request.resource.data.participants));
+   allow create: if enabled() && request.resource.data.keys().hasOnly(['name','type','participants','createdAt']) && text(request.resource.data.name,60) && request.resource.data.createdAt==request.time && request.resource.data.participants is list && request.resource.data.participants.size()<=100 && ((id=='general' && admin() && request.resource.data.type=='general') || (request.resource.data.type=='group' && admin() && request.auth.uid in request.resource.data.participants) || (featureAccess() && request.resource.data.type=='private' && request.resource.data.participants.size()==2 && request.resource.data.participants.toSet().size()==2 && request.auth.uid in request.resource.data.participants));
    allow update, delete: if false;
    match /messages/{mid} {
-    function canRead(){let c=get(/databases/$(database)/documents/conversations/$(id)).data;return enabled() && (c.type=='general' || request.auth.uid in c.participants);}
+    function canRead(){let c=get(/databases/$(database)/documents/conversations/$(id)).data;return enabled() && ((id=='general' && c.type=='general') || (featureAccess() && request.auth.uid in c.participants));}
     allow read: if canRead();
     allow create: if canRead() && request.resource.data.keys().hasOnly(['authorId','text','createdAt']) && request.resource.data.authorId==request.auth.uid && text(request.resource.data.text,2000) && request.resource.data.text.size()>0 && request.resource.data.createdAt==request.time;
     allow delete: if canRead() && resource.data.authorId==request.auth.uid;
@@ -90,12 +98,12 @@ service cloud.firestore {
    }
   }
   match /polls/{id} {
-   allow read: if enabled();
-   allow create: if enabled() && request.resource.data.keys().hasOnly(['question','options','createdBy','createdAt']) && request.resource.data.createdBy==request.auth.uid && text(request.resource.data.question,200) && request.resource.data.options is list && request.resource.data.options.size()>=2 && request.resource.data.options.size()<=10 && request.resource.data.createdAt==request.time;
-   allow delete: if admin() || (enabled() && resource.data.createdBy==request.auth.uid);
+   allow read: if featureAccess();
+   allow create: if featureAccess() && request.resource.data.keys().hasOnly(['question','options','createdBy','createdAt']) && request.resource.data.createdBy==request.auth.uid && text(request.resource.data.question,200) && request.resource.data.options is list && request.resource.data.options.size()>=2 && request.resource.data.options.size()<=10 && request.resource.data.createdAt==request.time;
+   allow delete: if admin() || (featureAccess() && resource.data.createdBy==request.auth.uid);
    match /votes/{uid} {
-    allow read: if enabled();
-    allow create, update: if enabled() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['choices']) && request.resource.data.choices is list && request.resource.data.choices.size()<=10 && request.resource.data.choices.hasOnly(get(/databases/$(database)/documents/polls/$(id)).data.options);
+    allow read: if featureAccess();
+    allow create, update: if featureAccess() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['choices']) && request.resource.data.choices is list && request.resource.data.choices.size()<=10 && request.resource.data.choices.hasOnly(get(/databases/$(database)/documents/polls/$(id)).data.options);
    }
   }
   match /preferences/{uid} {
