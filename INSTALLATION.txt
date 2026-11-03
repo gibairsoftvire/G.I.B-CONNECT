@@ -1,12 +1,14 @@
-G.I.B. CONNECT V0.9.9 — DEFILEMENT DES CONVERSATIONS
+G.I.B. CONNECT V0.9.10 — GPS AU FORMAT GOOGLE MAPS
 
-Depuis la V0.9.7 ou V0.9.8 déjà configurée : remplacer les fichiers applicatifs dans GitHub, puis fermer et rouvrir l’application installée. Sur ordinateur, actualiser avec Ctrl+F5.
-Aucune modification des règles Firebase, du serveur Apps Script ou de son URL n’est nécessaire.
-Ne supprimer aucun compte ni aucune donnée.
+Depuis V0.9.7 ou supérieure configurée : déposer tous les fichiers applicatifs de cette version dans le dépôt GitHub existant, y compris le nouveau gps.js. Attendre le déploiement puis fermer et rouvrir l’application. Sur ordinateur : Ctrl+F5.
+Aucune modification Firebase ou Apps Script nécessaire. Ne supprimer aucun compte ni aucune donnée.
 
-La conversation descend automatiquement jusqu’au dernier message :
-- à la réception d’un nouveau message ;
-- à l’envoi d’un message ;
-- à l’ouverture de la page Messages ou d’un autre salon.
-Le chargement des messages précédents conserve la position de lecture. Une simple modification de profil/grade ou de date d’envoi ne ramène pas au bas de la conversation.
-Les autres fonctions de V0.9.8 et les préférences existantes sont conservées.
+MODE MODERATEUR > TERRAINS
+Le champ Coordonnées GPS — Google Maps accepte une paire complète :
+48°50'41.2"N 0°58'21.3"W
+Les cartes des terrains affichent désormais ce format. N/S indiquent le nord/sud ; E/W l’est/ouest. La lettre O (ouest) et les symboles typographiques de minutes/secondes sont également acceptés à la saisie.
+Les degrés décimaux restent acceptés, par exemple : 48.844778, -0.972583.
+Laisser le champ vide permet de conserver un terrain sans GPS.
+Les valeurs existantes restent utilisables. Modifier seulement l’adresse ou les consignes d’un terrain conserve la précision de ses coordonnées d’origine.
+L’affichage arrondit les secondes au dixième, comme dans l’exemple fourni. Le bouton Itinéraire / carte utilise les coordonnées numériques enregistrées.
+L’exemple n’est attribué automatiquement à aucun terrain : le responsable doit renseigner les coordonnées réelles de chacun.
