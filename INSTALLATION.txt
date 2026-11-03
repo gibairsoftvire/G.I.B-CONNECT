@@ -1,4 +1,4 @@
-G.I.B. CONNECT V0.9.2 — Membre et grades dans les messages
+G.I.B. CONNECT V0.9.3 — Insignes de grade dans les messages
 
 Si V0.9.1 est déjà installée : aucune modification de Firebase nécessaire.
 1. Décompresser le ZIP.
@@ -8,8 +8,9 @@ Si V0.9.1 est déjà installée : aucune modification de Firebase nécessaire.
 Ne supprimer ni le dépôt ni les données.
 
 Le menu s’appelle désormais Membre. Les outils d’invitation restent disponibles dans cette page.
-Le grade attribué apparaît avant le pseudo dans les messages, y compris les messages déjà envoyés.
-Exemple : Caporal NITRO. Sans grade attribué, seul le pseudo apparaît.
+Un petit insigne doré représente le grade devant le pseudo, sans écrire le nom du grade. Cela s’applique aussi aux messages déjà envoyés.
+Le nom du grade est disponible au survol et pour les lecteurs d’écran. Sans grade attribué, seul le pseudo apparaît.
+Les sept grades proposés ont chacun un insigne distinct de style G.I.B. Un grade personnalisé reçoit un insigne générique.
 Le grade se met à jour à partir du profil partagé ; il n’est pas saisi librement par l’auteur du message.
 
 Si vous venez d’une version antérieure à V0.9.1 : publier d’abord le contenu de REGLES_FIREBASE.txt dans Firebase > Firestore Database > Règles. Conserver les comptes et les données existants.
