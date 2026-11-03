@@ -3,23 +3,37 @@ service cloud.firestore {
  match /databases/{database}/documents {
   function signed(){return request.auth != null;}
   function access(){return get(/databases/$(database)/documents/access/$(request.auth.uid)).data;}
-  function enabled(){return signed() && access().enabled == true && access().role in ['owner','admin','member'];}
-  function admin(){return enabled() && access().role in ['owner','admin'];}
+  function slotBound(d,uid){return d.role in ['moderator','admin'] && d.slot in ['1','2','3','4'] && get(/databases/$(database)/documents/moderators/$(d.slot)).data.uid==uid;}
+  function slotBoundAfter(d,uid){return d.slot in ['1','2','3','4'] && getAfter(/databases/$(database)/documents/moderators/$(d.slot)).data.uid==uid;}
+  function enabled(){return signed() && access().enabled == true && (access().role in ['owner','member'] || slotBound(access(),request.auth.uid));}
+  function admin(){return enabled() && access().role in ['owner','moderator','admin'];}
   function owner(){return enabled() && access().role == 'owner';}
   function text(v,n){return v is string && v.size() <= n;}
   function invited(){return signed() && request.auth.token.email_verified == true && exists(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())) && get(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())).data.enabled == true;}
   function invitedRole(){return get(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())).data.role;}
   match /access/{uid} {
+   function valid(){return request.resource.data.enabled is bool && ((request.resource.data.role=='member' && request.resource.data.keys().hasOnly(['role','enabled'])) || (request.resource.data.role=='moderator' && request.resource.data.keys().hasOnly(['role','enabled','slot']) && slotBoundAfter(request.resource.data,uid)));}
+   function ownInvite(){let invitation=get(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())).data;return signed() && uid==request.auth.uid && invited() && request.resource.data.enabled==true && request.resource.data.role==invitation.role && (invitation.role=='member' || (invitation.role=='moderator' && request.resource.data.slot==invitation.slot && getAfter(/databases/$(database)/documents/moderators/$(invitation.slot)).data.email==request.auth.token.email.lower()));}
    allow get: if signed() && (request.auth.uid == uid || owner());
    allow list: if owner();
-   allow create: if request.resource.data.keys().hasOnly(['role','enabled']) && request.resource.data.enabled == true && ((owner() && request.resource.data.role in ['admin','member']) || (signed() && uid == request.auth.uid && invited() && request.resource.data.role == invitedRole() && request.resource.data.role in ['admin','member']));
-   allow update, delete: if owner() && uid != request.auth.uid && resource.data.role != 'owner' && (request.method == 'delete' || (request.resource.data.keys().hasOnly(['role','enabled']) && request.resource.data.role in ['admin','member'] && request.resource.data.enabled is bool));
+   allow create: if valid() && (owner() || ownInvite());
+   allow update: if valid() && ((owner() && uid!=request.auth.uid && resource.data.role!='owner') || (resource.data.role=='member' && resource.data.enabled==true && request.resource.data.role=='moderator' && ownInvite()));
+   allow delete: if owner() && uid!=request.auth.uid && resource.data.role!='owner';
+  }
+  match /moderators/{slot} {
+   function valid(){return slot in ['1','2','3','4'] && request.resource.data.keys().hasOnly(['email','uid']) && text(request.resource.data.email,254) && text(request.resource.data.uid,128);}
+   allow get: if owner() || (signed() && (resource.data.uid==request.auth.uid || (request.auth.token.email_verified==true && resource.data.email==request.auth.token.email.lower())));
+   allow list: if owner();
+   allow create: if owner() && valid();
+   allow update: if valid() && (owner() || (signed() && request.auth.token.email_verified==true && resource.data.email==request.auth.token.email.lower() && request.resource.data.email==resource.data.email && (resource.data.uid=='' || resource.data.uid==request.auth.uid) && request.resource.data.uid==request.auth.uid && invited() && invitedRole()=='moderator' && get(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())).data.slot==slot));
+   allow delete: if owner();
   }
   match /invitations/{email} {
+   function valid(){return request.resource.data.enabled is bool && ((request.resource.data.role=='member' && request.resource.data.keys().hasOnly(['role','enabled','createdAt'])) || (request.resource.data.role=='moderator' && request.resource.data.keys().hasOnly(['role','enabled','createdAt','slot']) && request.resource.data.slot in ['1','2','3','4'] && getAfter(/databases/$(database)/documents/moderators/$(request.resource.data.slot)).data.email==email));}
    allow get: if admin() || (signed() && request.auth.token.email_verified == true && email == request.auth.token.email.lower());
    allow list: if admin();
-   allow create, update: if admin() && request.resource.data.keys().hasOnly(['role','enabled','createdAt']) && request.resource.data.enabled is bool && (request.resource.data.role == 'member' || (owner() && request.resource.data.role == 'admin')) && (request.method == 'create' || resource.data.role != 'admin' || owner());
-   allow delete: if admin() && (resource.data.role != 'admin' || owner());
+   allow create, update: if valid() && admin() && (request.resource.data.role=='member' || owner()) && (request.method=='create' || resource.data.role=='member' || owner());
+   allow delete: if admin() && (resource.data.role=='member' || owner());
   }
   match /profiles/{uid} {
    function valid(){return request.resource.data.keys().hasOnly(['nickname','grade','speciality']) && text(request.resource.data.nickname,40) && request.resource.data.nickname.size()>0 && text(request.resource.data.grade,70) && request.resource.data.speciality is list && request.resource.data.speciality.size()<=20;}

@@ -25,7 +25,7 @@ function errorMessage(error){const messages={
 async function logout(){lock('Déconnexion…');try{await api.signOut(auth);location.reload();}catch(error){status(errorMessage(error));}}
 async function openApp(user,rights,token){
  if(token!==epoch)return;
- const canAdmin=['owner','admin'].includes(rights.role);
+ const canAdmin=['owner','moderator','admin'].includes(rights.role);
  const session=Object.freeze({uid:user.uid,email:user.email||'membre',canAdmin,role:rights.role});
  if(loadedUid&&loadedUid!==user.uid){location.reload();return;}
  if(!loadedUid){
@@ -36,7 +36,7 @@ async function openApp(user,rights,token){
  }
  if(token!==epoch)return;
  $('connectedAccount').textContent='Compte connecté : '+session.email;
- $('accountRights').textContent='Droits : '+({owner:'Administrateur principal',admin:'Administrateur',member:'Membre'})[rights.role];
+ $('accountRights').textContent='Droits : '+({owner:'Administrateur principal',admin:'Modérateur',moderator:'Modérateur',member:'Membre'})[rights.role];
  $('logoutButton').onclick=logout;
  $('loginPassword').value='';$('authGate').hidden=true;$('appShell').hidden=false;
 }
@@ -51,9 +51,10 @@ function monitorUser(user){
   // On ne déverrouille jamais l’application sur des droits issus du cache hors ligne.
   if(snapshot.metadata.fromCache){lock('Vérification des droits en ligne… Une connexion Internet est nécessaire.');return;}
   const rights=snapshot.exists()?snapshot.data():null;
-  if(!rights||rights.enabled!==true||!['owner','admin','member'].includes(rights.role)){
+  if(rights?.role==='member'&&rights.enabled===true&&user.emailVerified&&!provisioning){provisioning=true;try{const i=await api.getDocFromServer(api.doc(db,'invitations',user.email.toLowerCase()));if(i.exists()&&i.data().enabled&&i.data().role==='moderator'){await api.runTransaction(db,async tx=>{const invitation=await tx.get(api.doc(db,'invitations',user.email.toLowerCase()));const v=invitation.data();const r=api.doc(db,'moderators',v.slot),slot=await tx.get(r);if(!v.enabled||!slot.exists()||slot.data().email!==user.email.toLowerCase()||slot.data().uid&&slot.data().uid!==user.uid)throw Error('Place indisponible');tx.update(r,{uid:user.uid});tx.set(api.doc(db,'access',user.uid),{role:'moderator',slot:v.slot,enabled:true});});return;}}catch(error){status(errorMessage(error));}}
+  if(!rights||rights.enabled!==true||!['owner','moderator','admin','member'].includes(rights.role)){
    window.gibStop?.();
-   if(!rights&&user.emailVerified&&!provisioning){provisioning=true;try{const invitation=await api.getDocFromServer(api.doc(db,'invitations',user.email.toLowerCase()));if(invitation.exists()&&invitation.data().enabled===true){await api.setDoc(api.doc(db,'access',user.uid),{role:invitation.data().role,enabled:true});return;}}catch(error){status(errorMessage(error));}}
+   if(!rights&&user.emailVerified&&!provisioning){provisioning=true;try{const invitation=await api.getDocFromServer(api.doc(db,'invitations',user.email.toLowerCase()));if(invitation.exists()&&invitation.data().enabled===true){await api.runTransaction(db,async tx=>{const i=await tx.get(api.doc(db,'invitations',user.email.toLowerCase()));if(!i.exists()||!i.data().enabled)throw Error('Invitation indisponible');const v=i.data();if(v.role==='moderator'){const r=api.doc(db,'moderators',v.slot),slot=await tx.get(r);if(!slot.exists()||slot.data().email!==user.email.toLowerCase()||slot.data().uid&&slot.data().uid!==user.uid)throw Error('Place indisponible');tx.update(r,{uid:user.uid});tx.set(api.doc(db,'access',user.uid),{role:'moderator',slot:v.slot,enabled:true});}else if(v.role==='member')tx.set(api.doc(db,'access',user.uid),{role:'member',enabled:true});else throw Error('Invitation à renouveler par le compte principal');});return;}}catch(error){status(errorMessage(error));}}
    lock(!user.emailVerified?'Vérifie ton adresse e-mail avant de rejoindre l’association, puis déconnecte-toi et reconnecte-toi.':'Compte connecté, mais accès non autorisé. Contacte un administrateur.');
    $('verifyEmail').classList.toggle('hidden',user.emailVerified);return;
   }
