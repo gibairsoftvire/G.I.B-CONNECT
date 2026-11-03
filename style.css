@@ -1,0 +1,35 @@
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#edf2e9;background:#151d19}*{box-sizing:border-box}body{margin:0;padding-bottom:85px}header{padding:17px max(18px,calc((100vw - 900px)/2));display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #364632;background:#1c2820}.brand{display:flex;align-items:center;gap:12px}.brand strong{letter-spacing:.08em}.brand small{display:block;color:#a9b6a5;font-size:11px;margin-top:4px}.mark{border:2px solid #c1a66b;color:#c1a66b;padding:10px 7px;border-radius:8px;font-weight:900}.tag{font-size:10px;border:1px solid #c1a66b;color:#c1a66b;border-radius:20px;padding:6px}main{max-width:900px;margin:auto;padding:22px 16px}.page{display:none}.page.active{display:block}h1{font-size:27px;margin:4px 0 8px}h2{font-size:19px;margin:25px 0 12px}.muted{color:#adbaac}.tile{background:#222f25;border:1px solid #3b4d3b;border-radius:15px;padding:17px;margin:12px 0}.tile b{font-size:17px}.tile p{color:#c0cbbd;line-height:1.5}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid .tile{margin:0}button,.button{background:#9dbf82;color:#132013;border:0;border-radius:10px;padding:11px 14px;font-weight:750;cursor:pointer;text-decoration:none;display:inline-block}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#354632;color:#edf2e9}.danger{background:#68413d;color:white}.inline{display:flex;gap:8px}.inline input{flex:1;min-width:0}label{display:block;margin:11px 0;color:#cbd7c7;font-size:14px}input,select,textarea{display:block;width:100%;background:#142018;color:#fff;border:1px solid #556b53;border-radius:9px;padding:11px;margin-top:6px;font:inherit}nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:#1c2820;border-top:1px solid #45563f;padding:8px 3px max(8px,env(safe-area-inset-bottom));z-index:10}nav button{flex:1;background:transparent;color:#9da99b;font-size:23px;padding:6px 2px}nav button.active{color:#c1a66b}nav span{display:block;font-size:10px;margin-top:2px}.pill{display:inline-block;padding:5px 9px;border-radius:20px;background:#354632;font-size:12px;color:#e1e8dc}.pill.warn{background:#66512e}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}.note{font-size:12px;color:#b8c4b4}.chat{max-height:220px;overflow:auto}.bubble{background:#354632;border-radius:10px;padding:10px;margin:8px 0}.bubble small{display:block;color:#c1a66b}.hidden{display:none!important}.option{display:block;padding:8px 0}.option input{width:auto;display:inline;margin-right:8px}.bar{height:9px;background:#42513e;border-radius:10px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:#9dbf82}.polloption{margin:11px 0}@media(max-width:480px){.grid{grid-template-columns:1fr}.tag{font-size:9px}header{padding:12px}}
+
+.demo-confirm{padding:12px;border:1px solid #9dbf82;border-radius:10px;background:#273a2a;color:#edf2e9}
+#invitePanel{margin-top:14px}
+
+.terrain-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.terrain-head h3{margin:0}.section-heading{margin-top:26px}.section-heading h2{margin-bottom:4px}textarea{resize:vertical;min-height:75px}.actions a.button{line-height:1.35}
+
+/* Six onglets, adaptés aux écrans de téléphone */
+nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px}
+nav button{min-width:0;padding:9px 2px;font-size:19px}
+nav button span{font-size:10px;overflow-wrap:anywhere}
+@media(max-width:390px){nav button span{font-size:9px}nav button{padding:8px 1px}}
+
+/* V0.6 : sept onglets et répertoire membres */
+nav{grid-template-columns:repeat(7,minmax(0,1fr))}nav button{font-size:18px;padding:8px 1px}nav span{font-size:9px}
+.heading-line{display:flex;align-items:center;justify-content:space-between;gap:12px}.heading-line h1{margin:0}.heading-line button{font-size:23px;line-height:1;padding:9px 15px}
+.conversation-layout{display:grid;grid-template-columns:minmax(160px,32%) minmax(0,1fr);gap:12px}.conversation-layout>.tile{margin:0}.conversation-item{display:block;width:100%;margin-bottom:8px;text-align:left;background:#26352a;color:#f2f5ef;border:1px solid #40533e;padding:12px}.conversation-item.selected{border-color:#c1a66b;background:#3a4937}.conversation-item small{display:block;color:#b8c4b4;font-weight:400;margin-top:4px}.member-row,.invite-row{display:flex;justify-content:space-between;align-items:center;gap:12px}.member-row p{margin:5px 0 9px}.invite-row{border-top:1px solid #40533e;padding:12px 0}.invite-row small{color:#c0cbbd}.member-check{display:flex;align-items:center;gap:9px}.member-check input{width:auto;margin:0}fieldset{border:1px solid #556b53;border-radius:9px;padding:10px}legend{padding:0 6px;color:#cbd7c7}
+@media(max-width:600px){.conversation-layout{grid-template-columns:1fr}.conversation-layout #conversationList{display:flex;gap:8px;overflow-x:auto}.conversation-item{min-width:145px}nav button{font-size:16px}nav span{font-size:8px}}
+
+/* V0.7 : édition administrative des grades et spécialisations */
+.member-row .actions{justify-content:flex-end}.audit-entry{padding:12px 0;border-bottom:1px solid #40533e}.audit-entry p{font-size:13px;margin:6px 0}.audit-entry small{color:#b8c4b4}.assigned-info{margin:12px 0;padding:10px 14px;border-left:3px solid #c1a66b;background:#19271d;border-radius:7px}.assigned-info p{margin:7px 0}@media(max-width:500px){.member-row{align-items:flex-start;flex-direction:column}.member-row .actions{justify-content:flex-start}}
+
+/* V0.8 */
+.speciality-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 12px}.check-setting{display:flex;align-items:center;gap:8px}.check-setting input{width:auto;margin:0;accent-color:#9dbf82}.catalog-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid #40533e;padding:8px 0}.catalog-row button{padding:7px 10px}.notification-settings{margin-top:16px;padding-top:12px;border-top:1px solid #45563f}.notification-line{padding:8px;border-bottom:1px solid #40533e;font-size:13px}.toast{position:sticky;top:8px;z-index:5;background:#405a3d;color:#fff;border:1px solid #c1a66b;padding:12px;border-radius:10px;margin-bottom:10px}@media(max-width:430px){.speciality-grid{grid-template-columns:1fr}}
+
+/* V0.8.1 : huit onglets, navigation défilante sur petits écrans */
+nav{display:flex;justify-content:flex-start;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;gap:3px}
+nav button{flex:1 0 82px;min-width:82px;font-size:18px;padding:8px 3px}
+nav span{font-size:10px;overflow-wrap:normal}
+@media(max-width:700px){nav button{flex:0 0 78px;min-width:78px}}
+
+/* V0.9 */
+#membershipPanel{border-color:#c1a66b}.mark{min-width:51px;text-align:center}
+
+[hidden]{display:none!important}.auth-gate{max-width:520px;margin:7vh auto;padding:16px}#authStatus{min-height:2em}#loginForm button{width:100%}.auth-gate input:focus-visible{outline:2px solid #c1a66b;outline-offset:2px}

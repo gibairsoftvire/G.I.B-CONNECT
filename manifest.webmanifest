@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "G.I.B. CONNECT — V0.9 — Connexion",
+  "short_name": "G.I.B. CONNECT",
+  "description": "Prototype local : adhésions manuelles, annuaire, messages et événements. Pas de serveur réel.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#151d19",
+  "theme_color": "#151d19",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
