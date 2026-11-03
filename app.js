@@ -93,5 +93,5 @@ window.gibReady=(async()=>{
  if(accountRole==='owner')ready.push(watch(F.query(coll('access'),F.limit(100)),s=>{accessList=rows(s);$('accessList').innerHTML=accessList.filter(a=>a.id!==uid).map(a=>`<p>${esc(nickname(a.id))} · ${esc(a.role)} · ${a.enabled?'Actif':'Désactivé'} <button data-toggle-access="${esc(a.id)}">${a.enabled?'Désactiver':'Réactiver'}</button></p>`).join('')||'<p>Aucun autre compte activé.</p>';}));
  window.gibStop=()=>{stopped=true;stops.forEach(f=>f());childStops.forEach(f=>f());chatUnsubscribe?.();};
  await Promise.all(ready);renderMode();watchMessages();setInterval(()=>{if(!stopped)renderEvents();},30000);
- if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+ 
 })();

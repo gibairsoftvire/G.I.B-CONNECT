@@ -1,3 +1,3 @@
-# G.I.B. CONNECT V0.9.4
+# G.I.B. CONNECT V0.9.5 — Installable
 
-Les outils de création et les invitations sont visibles uniquement en mode Modérateur. Voir INSTALLATION.txt.
+Voir INSTALLATION.txt. Installation sur écran d’accueil depuis le navigateur, sans boutique. Internet reste nécessaire pour la connexion et la synchronisation.

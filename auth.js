@@ -78,6 +78,6 @@ try{
  import(`https://www.gstatic.com/firebasejs/${version}/firebase-firestore.js`)
  ]);
  api={...authModule,...firestoreModule};const app=appModule.initializeApp(firebaseConfig);auth=api.getAuth(app);auth.languageCode='fr';db=api.getFirestore(app);
- await api.setPersistence(auth,api.browserSessionPersistence);
+ await api.setPersistence(auth,(window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true)?api.browserLocalPersistence:api.browserSessionPersistence);
  api.onAuthStateChanged(auth,monitorUser,error=>lock(errorMessage(error)));controls(false);
 }catch(error){lock('Impossible de charger Firebase. Vérifie Internet puis actualise la page. '+(error?.code||''));}
