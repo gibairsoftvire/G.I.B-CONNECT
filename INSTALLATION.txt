@@ -1,14 +1,26 @@
-G.I.B. CONNECT V0.9.10 — GPS AU FORMAT GOOGLE MAPS
+G.I.B. CONNECT V0.9.11 — TEXTE COMPACT ET PHOTOS
 
-Depuis V0.9.7 ou supérieure configurée : déposer tous les fichiers applicatifs de cette version dans le dépôt GitHub existant, y compris le nouveau gps.js. Attendre le déploiement puis fermer et rouvrir l’application. Sur ordinateur : Ctrl+F5.
-Aucune modification Firebase ou Apps Script nécessaire. Ne supprimer aucun compte ni aucune donnée.
+MISE A JOUR DANS CET ORDRE
+1. Dans Firebase > Firestore Database > Règles, remplacer tout le contenu par REGLES_FIREBASE.txt de cette version puis Publier. Les anciennes règles refuseraient les photos.
+2. Dans GitHub, remplacer les fichiers applicatifs par ceux de ce ZIP, y compris le nouveau photos.js. Attendre le déploiement puis fermer et rouvrir l’application. Sur ordinateur : Ctrl+F5.
+3. Aucun changement Apps Script ni de l’URL du service de notifications n’est nécessaire.
+Ne supprimer ni comptes ni données. Les messages existants restent lisibles.
 
-MODE MODERATEUR > TERRAINS
-Le champ Coordonnées GPS — Google Maps accepte une paire complète :
-48°50'41.2"N 0°58'21.3"W
-Les cartes des terrains affichent désormais ce format. N/S indiquent le nord/sud ; E/W l’est/ouest. La lettre O (ouest) et les symboles typographiques de minutes/secondes sont également acceptés à la saisie.
-Les degrés décimaux restent acceptés, par exemple : 48.844778, -0.972583.
-Laisser le champ vide permet de conserver un terrain sans GPS.
-Les valeurs existantes restent utilisables. Modifier seulement l’adresse ou les consignes d’un terrain conserve la précision de ses coordonnées d’origine.
-L’affichage arrondit les secondes au dixième, comme dans l’exemple fourni. Le bouton Itinéraire / carte utilise les coordonnées numériques enregistrées.
-L’exemple n’est attribué automatiquement à aucun terrain : le responsable doit renseigner les coordonnées réelles de chacun.
+MESSAGES
+Le texte est réduit à 13 px et les bulles sont plus compactes.
+En mode Modérateur, un bouton Ajouter une photo apparaît au-dessus du champ de message.
+Choisir une photo, attendre Photo prête à être envoyée, ajouter éventuellement une légende, puis Envoyer. Une photo seule est également acceptée.
+Retirer la photo permet d’annuler la pièce jointe avant envoi.
+Le passage en mode Membre retire les photos encore en préparation et masque les outils.
+
+SONDAGES
+En mode Modérateur, Ajouter une photo apparaît dans Créer un sondage. Une photo facultative illustre le sondage ; les choix et votes restent textuels.
+Les membres voient les photos et peuvent les ouvrir en grand. Ils ne peuvent pas en ajouter.
+La confidentialité des salons, les suspensions de cotisation, la conversation générale, les insignes, le défilement automatique et les paramètres de notifications restent appliqués.
+
+LIMITES
+Une photo par message ou sondage. La photo est réduite automatiquement (JPEG, jusqu’à 1280 pixels sur le côté le plus long puis réduction supplémentaire si nécessaire). Le fichier d’origine doit faire moins de 15 Mo.
+Les photos sont compressées avant sauvegarde et ne conservent pas les métadonnées du fichier d’origine. La taille finale est limitée à environ 150 Ko pour respecter la taille maximale des documents Firestore.
+Cette solution utilise le Firestore existant et ne nécessite pas d’activer Firebase Storage ou de changer de forfait. Photos et messages consomment les quotas Firestore existants ; ce n’est pas un stockage illimité.
+Le fichier firestore.indexes.json propose d’exclure le champ image de l’indexation (optimisation facultative), tout en conservant l’index de surveillance des messages déjà fourni.
+Le serveur de notifications reste générique : il n’affiche pas les photos ni le contenu privé sur l’écran verrouillé.

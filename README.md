@@ -1,3 +1,3 @@
-# G.I.B. CONNECT V0.9.10
+# G.I.B. CONNECT V0.9.11
 
-Saisie et affichage GPS au format Google Maps : degrés, minutes, secondes et N/S/E/W. Les coordonnées sont conservées en nombres pour les itinéraires. Voir INSTALLATION.txt.
+Messages plus compacts et photos facultatives dans messages/sondages en mode Modérateur. Publier les nouvelles règles Firebase avant de remplacer les fichiers. Voir INSTALLATION.txt.

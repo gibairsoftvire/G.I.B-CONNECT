@@ -1,1 +1,6 @@
-V0.9.10 — Tests locaux : conversion de l’exemple DMS vers les nombres, affichage identique, nord/sud/est/ouest, symboles typographiques, secondes avec virgule, validation des minutes/secondes et des limites géographiques, arrondis avec report de degrés/minutes, saisie décimale, sauvegarde numérique du formulaire, conservation de la précision lors d’une modification d’adresse et suppression des coordonnées. Syntaxe JS validée. Règles et serveur inchangés. Aucun test sur téléphone réel effectué pour cette mise à jour.
+V0.9.11 — Vérifications
+Syntaxe de tous les fichiers JavaScript : valide.
+Tests simulés : validation JPEG, limite de taille, compression, ouverture et fermeture de la photo, contrôle du mode Modérateur, suppression de la pièce jointe, annulation des traitements périmés.
+Identifiants HTML uniques et contrôles photo présents.
+Deux copies des règles Firebase identiques ; ajout image réservé aux comptes autorisés par admin().
+Pas de test Firebase réel ni de test sur téléphone effectué pour cette livraison. Vérifier après publication avec un compte Modérateur puis un compte Membre.

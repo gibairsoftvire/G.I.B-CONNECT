@@ -11,6 +11,7 @@ service cloud.firestore {
   function validated(uid){return exists(/databases/$(database)/documents/memberships/$(uid)) && get(/databases/$(database)/documents/memberships/$(uid)).data.validated==true;}
   function featureAccess(){return enabled() && (admin() || !exists(/databases/$(database)/documents/restrictions/$(request.auth.uid)) || get(/databases/$(database)/documents/restrictions/$(request.auth.uid)).data.suspended!=true || validated(request.auth.uid));}
   function text(v,n){return v is string && v.size() <= n;}
+  function validPhoto(){return !('image' in request.resource.data) || (admin() && request.resource.data.image is string && request.resource.data.image.size()<=200000 && request.resource.data.image.matches('data:image/jpeg;base64,[A-Za-z0-9+/=]+'));}
   function invited(){return signed() && request.auth.token.email_verified == true && exists(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())) && get(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())).data.enabled == true;}
   function invitedRole(){return get(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())).data.role;}
   match /access/{uid} {
@@ -85,7 +86,7 @@ service cloud.firestore {
    match /messages/{mid} {
     function canRead(){let c=get(/databases/$(database)/documents/conversations/$(id)).data;return enabled() && ((id=='general' && c.type=='general') || (featureAccess() && request.auth.uid in c.participants));}
     allow read: if canRead();
-    allow create: if canRead() && request.resource.data.keys().hasOnly(['authorId','text','createdAt']) && request.resource.data.authorId==request.auth.uid && text(request.resource.data.text,2000) && request.resource.data.text.size()>0 && request.resource.data.createdAt==request.time;
+    allow create: if canRead() && request.resource.data.keys().hasOnly(['authorId','text','createdAt','image']) && request.resource.data.authorId==request.auth.uid && text(request.resource.data.text,2000) && (request.resource.data.text.size()>0 || 'image' in request.resource.data) && validPhoto() && request.resource.data.createdAt==request.time;
     allow delete: if canRead() && resource.data.authorId==request.auth.uid;
    }
   }
@@ -100,7 +101,7 @@ service cloud.firestore {
   }
   match /polls/{id} {
    allow read: if featureAccess();
-   allow create: if featureAccess() && request.resource.data.keys().hasOnly(['question','options','createdBy','createdAt']) && request.resource.data.createdBy==request.auth.uid && text(request.resource.data.question,200) && request.resource.data.options is list && request.resource.data.options.size()>=2 && request.resource.data.options.size()<=10 && request.resource.data.createdAt==request.time;
+   allow create: if featureAccess() && request.resource.data.keys().hasOnly(['question','options','createdBy','createdAt','image']) && request.resource.data.createdBy==request.auth.uid && text(request.resource.data.question,200) && validPhoto() && request.resource.data.options is list && request.resource.data.options.size()>=2 && request.resource.data.options.size()<=10 && request.resource.data.createdAt==request.time;
    allow delete: if admin() || (featureAccess() && resource.data.createdBy==request.auth.uid);
    match /votes/{uid} {
     allow read: if featureAccess();
