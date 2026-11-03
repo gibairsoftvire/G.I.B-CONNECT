@@ -1,12 +1,19 @@
-G.I.B. CONNECT V0.9.7 — NOTIFICATIONS A CONFIGURER
+G.I.B. CONNECT V0.9.8 — NOTIFICATIONS AU PREMIER ACCES
 
-1. Lire serveur-google/CONFIGURATION.txt et créer le service Apps Script.
-2. Publier REGLES_FIREBASE.txt dans Firebase > Firestore Database > Règles.
-3. Décompresser le ZIP et remplacer les fichiers de l’application dans le dépôt GitHub existant. Conserver index.html à la racine. Le dossier serveur-google sert à préparer le serveur, il peut rester sur l’ordinateur.
-4. Après le déploiement, fermer et rouvrir l’application. Sur ordinateur, Ctrl+F5.
-5. Compte principal > Profil > Mode Modérateur > Service de notifications : URL /exec et activation.
-6. Chaque téléphone : Profil > Activer les notifications sur cet appareil.
-7. Faire le test réel entre deux comptes décrit dans CONFIGURATION.txt.
+Depuis V0.9.7 déjà configurée : remplacer les fichiers applicatifs sur GitHub, puis fermer et rouvrir l’application (Ctrl+F5 sur ordinateur). Aucune modification des règles Firebase, du serveur Apps Script ou de son URL n’est nécessaire.
+Ne supprimer aucun compte ni aucune donnée.
+Depuis une version antérieure, configurer d’abord le service selon serveur-google/CONFIGURATION.txt et publier les règles fournies.
 
-Ne supprimer aucun compte ni aucune donnée Firebase. Ne jamais publier le JSON privé du compte de service sur GitHub ou dans le chat.
-Les fonctionnalités et droits de V0.9.6 sont conservés. Les nouvelles règles sont nécessaires, même si V0.9.6 fonctionne déjà.
+COMPORTEMENT
+- Pour les profils sans préférences enregistrées, Messages, Nouveaux groupes et Nouveaux événements sont cochés par défaut. Cette version n’ajoute pas de nouveaux types d’envois : le service V0.9.7 envoie les notifications de messages.
+- Au premier accès de chaque profil sur un appareil non configuré, un écran invite à activer les notifications.
+- Le membre touche Activer les notifications puis Autoriser dans la demande du téléphone/navigateur. Android/iPhone ne permettent pas de forcer cette permission.
+- Si l’autorisation existe déjà, l’appareil est inscrit automatiquement, sauf désactivation explicite enregistrée.
+- Si l’autorisation est refusée ou le navigateur incompatible, un message explique la marche à suivre et le membre peut continuer à utiliser l’application.
+- Les préférences déjà désactivées sont conservées.
+- Profil > Désactiver sur cet appareil coupe les notifications de cet appareil et mémorise ce choix pour ce profil. Elles ne se réactivent pas toutes seules au prochain démarrage.
+- Profil > Messages coupe la réception des notifications de messages pour le compte sur tous ses appareils, grâce au contrôle du serveur existant.
+- Pour réactiver : Profil > Activer les notifications sur cet appareil. Si le système les bloque, il faut aussi les autoriser dans ses réglages.
+
+Sur iPhone, ouvrir la version installée sur l’écran d’accueil (iOS 16.4 ou supérieur). L’accord reste propre à chaque téléphone ; une autorisation sur un appareil ne s’applique pas aux autres.
+Le service serveur et les autorisations de l’appareil doivent être configurés pour recevoir les messages, même si les préférences du profil sont cochées.

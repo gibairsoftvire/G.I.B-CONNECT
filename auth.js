@@ -40,7 +40,7 @@ async function openApp(user,rights,token){
  $('connectedAccount').textContent='Compte connecté : '+session.email;
  $('accountRights').textContent='Droits : '+({owner:'Administrateur principal',admin:'Modérateur',moderator:'Modérateur',member:'Membre'})[rights.role];
  $('logoutButton').onclick=logout;
- $('loginPassword').value='';$('authGate').hidden=true;$('appShell').hidden=false;
+ $('loginPassword').value='';$('authGate').hidden=true;$('appShell').hidden=false;window.gibPush?.offerOnboarding?.();
 }
 function monitorUser(user){
  const token=++epoch;if(unsubscribe){unsubscribe();unsubscribe=null;}
