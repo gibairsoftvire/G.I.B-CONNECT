@@ -2,7 +2,7 @@ import { firebaseConfig } from './firebase-config.js';
 const $=id=>document.getElementById(id);
 let auth, db, api, unsubscribe, currentUid=null, loadedUid=null, opening=false, epoch=0;
 const status=message=>{$('authStatus').textContent=message;};
-const controls=disabled=>{for(const id of ['loginSubmit','googleLogin','resetPassword'])$(id).disabled=disabled;};
+const controls=disabled=>{for(const id of ['loginSubmit','googleLogin','resetPassword','createAccount'])$(id).disabled=disabled;};
 function lock(message){$('appShell').hidden=true;$('authGate').hidden=false;status(message);}
 function errorMessage(error){const messages={
  'auth/invalid-credential':'Adresse e-mail ou mot de passe incorrect.',
@@ -18,7 +18,9 @@ function errorMessage(error){const messages={
  'auth/operation-not-allowed':'Cette méthode doit être activée dans Firebase Authentication.',
  'auth/api-key-not-valid.-please-pass-a-valid-api-key.':'Configuration Firebase à vérifier : copie le bloc firebaseConfig en texte.',
  'auth/invalid-api-key':'Configuration Firebase à vérifier : copie le bloc firebaseConfig en texte.',
- 'permission-denied':'Lecture des droits refusée. Vérifie les règles Firestore publiées.'
+ 'permission-denied':'Accès refusé. Vérifie les règles Firestore publiées.',
+ 'auth/email-already-in-use':'Un compte existe déjà avec cette adresse. Utilise Se connecter ou Mot de passe oublié.',
+ 'auth/weak-password':'Choisis un mot de passe d’au moins 12 caractères.'
 };return messages[error?.code]||'Le service ne répond pas ou sa configuration est incorrecte. Réessaie et indique le code : '+(error?.code||'connexion');}
 async function logout(){lock('Déconnexion…');try{await api.signOut(auth);location.reload();}catch(error){status(errorMessage(error));}}
 async function openApp(user,rights,token){
@@ -29,7 +31,8 @@ async function openApp(user,rights,token){
  if(!loadedUid){
   if(opening)return;opening=true;
   Object.defineProperty(window,'gibSession',{value:session,configurable:true});
-  try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./app.js';script.onload=resolve;script.onerror=reject;document.body.append(script);});loadedUid=user.uid;}catch{opening=false;lock('Chargement de l’application impossible. Actualise la page.');return;}
+  window.gibBackend=Object.freeze({api,db,uid:user.uid,email:user.email||'membre',role:rights.role});
+  try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./app.js';script.onload=resolve;script.onerror=reject;document.body.append(script);});await window.gibReady;loadedUid=user.uid;}catch{window.gibStop?.();opening=false;lock('Synchronisation impossible. Vérifie que les nouvelles règles Firestore ont été publiées, puis actualise la page.');return;}
  }
  if(token!==epoch)return;
  $('connectedAccount').textContent='Compte connecté : '+session.email;
@@ -42,12 +45,19 @@ function monitorUser(user){
  currentUid=user?.uid||null;$('gateLogout').classList.toggle('hidden',!user);
  if(!user){lock('Connecte-toi avec le compte créé dans Firebase.');if(loadedUid)location.reload();return;}
  lock('Vérification de tes droits…');
- unsubscribe=api.onSnapshot(api.doc(db,'access',user.uid),{includeMetadataChanges:true},snapshot=>{
+ let provisioning=false;
+ unsubscribe=api.onSnapshot(api.doc(db,'access',user.uid),{includeMetadataChanges:true},async snapshot=>{
   if(token!==epoch)return;
   // On ne déverrouille jamais l’application sur des droits issus du cache hors ligne.
   if(snapshot.metadata.fromCache){lock('Vérification des droits en ligne… Une connexion Internet est nécessaire.');return;}
   const rights=snapshot.exists()?snapshot.data():null;
-  if(!rights||rights.enabled!==true||!['owner','admin','member'].includes(rights.role)){lock('Compte connecté, mais accès non autorisé. Un responsable doit activer ton document access/'+user.uid+'.');return;}
+  if(!rights||rights.enabled!==true||!['owner','admin','member'].includes(rights.role)){
+   window.gibStop?.();
+   if(!rights&&user.emailVerified&&!provisioning){provisioning=true;try{const invitation=await api.getDocFromServer(api.doc(db,'invitations',user.email.toLowerCase()));if(invitation.exists()&&invitation.data().enabled===true){await api.setDoc(api.doc(db,'access',user.uid),{role:invitation.data().role,enabled:true});return;}}catch(error){status(errorMessage(error));}}
+   lock(!user.emailVerified?'Vérifie ton adresse e-mail avant de rejoindre l’association, puis déconnecte-toi et reconnecte-toi.':'Compte connecté, mais accès non autorisé. Contacte un administrateur.');
+   $('verifyEmail').classList.toggle('hidden',user.emailVerified);return;
+  }
+  $('verifyEmail').classList.add('hidden');
   if(loadedUid&&window.gibSession.role!==rights.role){location.reload();return;}
   openApp(user,rights,token);
  },error=>{if(token===epoch)lock(errorMessage(error));});
@@ -56,6 +66,8 @@ $('loginForm').onsubmit=async e=>{e.preventDefault();controls(true);status('Conn
 $('googleLogin').onclick=async()=>{controls(true);status('Ouverture de Google…');try{await api.signInWithPopup(auth,new api.GoogleAuthProvider());}catch(error){status(errorMessage(error));}finally{controls(false);}};
 $('resetPassword').onclick=async()=>{const email=$('loginEmail').value.trim();if(!email){status('Renseigne ton adresse e-mail au-dessus, puis clique à nouveau sur Mot de passe oublié.');return;}controls(true);try{await api.sendPasswordResetEmail(auth,email);status('Si ce compte existe, un lien de réinitialisation sera envoyé. Vérifie aussi les courriers indésirables.');}catch(error){status(errorMessage(error));}finally{controls(false);}};
 $('gateLogout').onclick=logout;
+$('createAccount').onclick=async()=>{const email=$('loginEmail').value.trim(),password=$('loginPassword').value;if(!email||password.length<12){status('Indique ton adresse invitée et un mot de passe d’au moins 12 caractères.');return;}controls(true);try{await api.createUserWithEmailAndPassword(auth,email,password);status('Compte créé. Clique sur Vérifier mon e-mail, puis utilise le lien reçu avant de te reconnecter.');$('verifyEmail').classList.remove('hidden');}catch(error){status(errorMessage(error));}finally{$('loginPassword').value='';controls(false);}};
+$('verifyEmail').onclick=async()=>{if(!auth.currentUser)return;try{await api.sendEmailVerification(auth.currentUser);status('Lien de vérification envoyé. Ouvre-le, puis déconnecte-toi et reconnecte-toi ici.');}catch(error){status(errorMessage(error));}};
 window.addEventListener('offline',()=>lock('Connexion Internet interrompue. Reconnecte-toi au réseau puis actualise la page.'));
 try{
  const version='12.19.0';

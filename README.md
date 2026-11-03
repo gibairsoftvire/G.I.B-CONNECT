@@ -1,25 +1,34 @@
-# G.I.B. CONNECT — V0.9, étape de connexion réelle
+# G.I.B. CONNECT — V0.9 synchronisée, édition militaire
 
-Cette livraison conserve l’interface et les fonctions locales du ZIP V0.9 original. Elle ajoute Firebase Authentication (e-mail/mot de passe, Google, réinitialisation) et la consultation des droits Firestore access/{uid}. Aucun Analytics, Storage ou service facturable n’est utilisé par ce code.
+Esthétique adaptée à la maquette fournie : camouflage discret, titres dorés, panneaux à angles coupés, bulles de conversation et navigation basse à cinq rubriques. Le menu en haut à gauche donne accès à Membres, Cotisations, Discord et HelloAsso. Logo et icônes de l’application identiques aux fichiers V0.9 originaux.
 
-IMPORTANT : ce n’est pas encore une version multi-utilisateur complète. Membres, événements, terrains, cotisations, conversations, sondages et notifications restent LOCAUX à l’appareil et au compte connecté. Invitations et billets restent des simulations. Aucun bot Discord ou paiement réel n’est raccordé. Une connexion réelle ne synchronise pas les données. Les données locales ne constituent pas un stockage confidentiel face aux autres utilisateurs de cet appareil.
+Les dates, noms, grades et compteurs viennent de Firebase. Aucun événement ni message des captures de test n’est inclus dans la livraison. Pas d’accusés de lecture fictifs.
 
-## Mise en ligne
-1. Décompresser le ZIP.
-2. Dans GitHub G.I.B-CONNECT, Add file → Upload files.
-3. Envoyer tous les fichiers et le dossier icons à la racine. index.html ne doit pas se trouver dans un sous-dossier.
-4. Commit changes. Attendre la publication GitHub Pages, puis Ctrl+F5.
-5. Ouvrir https://gibairsoftvire.github.io/G.I.B-CONNECT/ et se connecter avec le compte créé dans Firebase. Aucun mot de passe n’est inclus dans les fichiers.
+Validation de cette édition : test de synchronisation de deux clients avec règles actives ; rendu et parcours dans Chromium aux largeurs 320, 390, 768 et 1440 ; menu, profil, vue administrateur et envoi de message ; pas de débordement horizontal. Les règles Firebase sont identiques à celles de la V0.9 synchronisée.
 
-Firebase doit disposer de la base Firestore (default), des règles du fichier firestore.rules déjà publiées, et du domaine autorisé gibairsoftvire.github.io. Les paramètres Web ont été transcrits de la capture fournie. En cas d’erreur de clé, copier la configuration en texte depuis Firebase et remplacer firebase-config.js. Ne jamais ajouter de clé de compte de service.
+Les polices sont fournies localement dans assets avec leurs licences OFL, sans chargement auprès d’un service de polices tiers. Le motif de camouflage est un SVG local.
 
-## Droits
-Dans Firestore access/{UID}, role = owner, admin ou member (type string), enabled = true (type boolean). Le compte doit déjà exister dans Authentication et son UID doit correspondre exactement au nom du document. Seule la console Firebase peut modifier ces droits avec les règles fournies. Aucun UID administrateur n’est codé en dur dans l’application. Une connexion Google avec un autre UID ne bénéficie pas automatiquement des droits du compte e-mail.
 
-Les comptes owner et admin peuvent choisir Membre ou Administrateur dans Profil. Un compte member reste en vue Membre. Les droits doivent être confirmés en ligne ; un document absent, désactivé, inconnu ou issu uniquement du cache ne déverrouille pas l’application. Les futures opérations partagées devront être contrôlées par des règles serveur spécifiques ; les outils actuellement locaux ne constituent pas une autorisation serveur pour d’autres données.
+Lire INSTALLATION.txt. Les règles Firestore doivent être publiées AVANT les fichiers Web.
 
-## Données existantes et retour arrière
-Les anciennes données de démo ne sont ni effacées ni importées automatiquement dans un compte réel. Chaque compte utilise une nouvelle clé de stockage local séparée. Le ZIP V0.9 original reste inchangé. Pour revenir à celui-ci, republier son contenu.
+L’interface V0.9 est conservée, avec le logo et les icônes d’origine. Firebase gère la connexion, les droits et les données partagées. Les opérations sensibles sont protégées côté serveur ; masquer un formulaire ne constitue pas le contrôle d’accès.
 
-## Tests
-Syntaxe JavaScript vérifiée. Tests DOM automatisés avec Firebase simulé : accès par défaut refusé, refus du cache hors ligne, owner/admin/membre, bascule de vue, accès désactivé et révocation. Aucun test de connexion réel ni contrôle visuel sur navigateur réel n’a été effectué dans cet environnement. À vérifier après publication : connexion avec le compte principal, vue Administrateur, retour Membre, déconnexion et refus d’un compte non autorisé.
+## Validation réalisée
+- Vérification de syntaxe app.js, auth.js et sw.js.
+- Tests avec le véritable émulateur Firestore et les règles de cette livraison : refus anonyme/non autorisé, impossibilité de s’attribuer des droits, confidentialité des conversations privées y compris face à un administrateur non participant, identité des auteurs, profil/grade, invitation avec e-mail vérifié, cotisation, votes, révocation, concurrence pour la dernière place, libération de place, date limite.
+- Deux clients indépendants et interface DOM : synchronisation des profils/grades, terrains initiaux, événement et présence, salon/message, cotisation, annonce et vote.
+- Amorçage de connexion et activation des invitations testés avec SDK simulé.
+- Empreintes SHA-256 des trois icônes identiques aux originaux V0.9.
+
+La connexion réelle à ton projet a été validée dans la livraison précédente. Cette nouvelle synchronisation doit encore être vérifiée après publication sur ton site. Aucun accès à tes mots de passe, aucune modification distante de ton projet ou de ton dépôt n’a été effectué.
+Le rendu a été vérifié dans Chromium aux dimensions mobile/tablette/ordinateur. Un essai sur un vrai téléphone reste à effectuer après publication.
+
+## Sources techniques
+https://firebase.google.com/docs/firestore/security/rules-conditions
+https://firebase.google.com/docs/firestore/manage-data/transactions
+https://firebase.google.com/docs/firestore/security/test-rules-emulator
+
+## Fichiers
+index.html, style.css, theme.css, appearance.js, app.js, auth.js, firebase-config.js, manifest.webmanifest, sw.js, icons et assets constituent le site statique sans compilation.
+firestore.rules et REGLES_FIREBASE.txt contiennent les mêmes règles.
+firebase.json sert uniquement aux outils de développement ; sa présence sur GitHub ne configure pas Firebase.

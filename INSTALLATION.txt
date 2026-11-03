@@ -1,0 +1,74 @@
+G.I.B. CONNECT — V0.9 SYNCHRONISÉE, ÉDITION MILITAIRE
+
+Conserve ton projet Firebase et ton dépôt GitHub existants.
+
+1. RÈGLES FIREBASE
+Si tu as déjà publié les règles de GIB_CONNECT_V0_9_SYNCHRONISE.zip, elles sont identiques : tu peux passer à l’étape 2.
+Sinon, à faire avant de remplacer les fichiers :
+Décompresse le ZIP. Ouvre REGLES_FIREBASE.txt avec le Bloc-notes.
+Copie tout le texte.
+Dans Firebase : Firestore → Règles, remplace tout le contenu et clique Publier.
+Ces règles remplacent les précédentes qui bloquaient les données associatives.
+Le document access de l’administrateur principal reste inchangé.
+Ne sélectionne pas le mode Test et ne rends pas la base publique.
+
+2. FICHIERS GITHUB
+Dans le dépôt G.I.B-CONNECT : Add file → Upload files.
+Glisse TOUS les fichiers décompressés et les DEUX dossiers icons ET assets à la racine du dépôt. Les fichiers theme.css et appearance.js sont indispensables.
+Ne glisse ni le ZIP seul, ni un dossier parent englobant.
+Clique Commit changes. Ne recrée ni le dépôt ni le projet Firebase.
+Attends la publication GitHub Pages, puis Ctrl+F5. Si l’ancienne présentation reste affichée, ferme l’onglet et rouvre le lien.
+L’ajout du fichier firestore.rules sur GitHub ne publie PAS les règles dans Firebase : l’étape 1 est indispensable.
+
+3. OUVERTURE
+Après la publication GitHub Pages, ouvre :
+https://gibairsoftvire.github.io/G.I.B-CONNECT/
+Fais Ctrl+F5 et reconnecte-toi avec ton compte existant.
+Dans Profil, choisis Administrateur.
+Trois terrains sont créés au premier démarrage partagé : G.I.B., La L.A.M et L’A.D.P.M. Aucun point GPS n’est inventé.
+
+4. VÉRIFICATION SUR DEUX APPAREILS
+Connecte le même compte sur un second appareil (ou dans un autre navigateur).
+Sur le premier, crée un événement de test : il doit apparaître sur le second.
+Dans Messages, écris dans G.I.B. Général : le message doit apparaître sur le second.
+Changer de vue Membre/Administrateur reste propre à chaque session.
+
+5. NOUVEAUX MEMBRES
+En mode Administrateur, dans Profil, prépare une autorisation avec l’adresse e-mail exacte du membre.
+Partage toi-même le lien de l’application ; aucun e-mail d’invitation automatique n’est envoyé.
+Le membre peut créer son compte depuis l’écran de connexion, vérifier son adresse avec le bouton prévu, puis se déconnecter et se reconnecter.
+Une connexion Google vérifiée peut aussi activer une invitation correspondant à son adresse.
+Seul l’administrateur principal peut autoriser un autre administrateur.
+La création d’un compte Firebase sans invitation ne donne aucun accès aux données G.I.B.
+Les e-mails de vérification et de réinitialisation dépendent des quotas gratuits Firebase.
+
+6. DÉSACTIVER UN ACCÈS
+Administrateur principal : Profil → Gestion des accès.
+Les accès des autres comptes peuvent être désactivés/réactivés.
+Retirer une invitation n’enlève pas les droits d’un compte déjà activé : désactive son accès.
+Le compte owner ne peut pas se désactiver lui-même depuis l’application.
+
+7. ANCIENNES DONNÉES
+Les données des versions locales restent dans le navigateur d’origine et ne sont pas effacées.
+Elles ne sont pas importées automatiquement dans la base partagée : cela évite d’envoyer des profils ou événements fictifs aux membres.
+Les nouvelles données partagées démarrent sans événement, sondage, annonce ou message de démonstration.
+
+PÉRIMÈTRE
+Partagé : profils/pseudonymes, grades, spécialisations, catalogues, terrains GPS, événements, présences OUI/NON, cotisations 15 €/mois ou 150 €/an, salons, messages, annonces, prises de connaissance, sondages et votes nominatifs, invitations et préférences.
+La dernière place d’un événement est contrôlée par transaction et règles serveur ; pas de liste d’attente dans cette livraison.
+Les cotisations sont enregistrées manuellement (HelloAsso, Virement, Espèces, Chèque) : aucun encaissement ni confirmation HelloAsso automatique.
+Discord et HelloAsso sont accessibles par liens ; aucun bot ni API raccordé.
+Pas de transfert de fichiers, photos ou vocaux, ni notification à distance en arrière-plan.
+Les préférences de notification sont synchronisées, pas un service de push.
+Les messages texte sont limités à 2 000 caractères ; les historiques chargent 50 messages puis des lots supplémentaires.
+Les listes sont bornées à 100 membres/terrains/événements/salons et 10 annonces/sondages récents pour limiter les lectures.
+Aucune sauvegarde automatique n’est fournie par cette livraison.
+Le logo et les icônes proviennent des fichiers originaux V0.9, sans redessin ni retouche.
+Le surnom reste distinct de l’UID ; cette livraison ne garantit pas l’unicité des surnoms.
+
+COÛT
+Conçu pour Firebase Spark et GitHub Pages, sans Cloud Functions ni Firebase Storage.
+Ne pas activer Blaze ou un compte de facturation pour cette livraison.
+La disponibilité et les quotas restent ceux des offres gratuites.
+
+En cas de refus d’accès : vérifier REGLES_FIREBASE.txt dans Firebase et le document access/{UID} avec enabled=true (booléen) et role=owner/admin/member (chaîne).

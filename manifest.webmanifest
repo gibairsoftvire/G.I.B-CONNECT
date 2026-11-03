@@ -1,13 +1,13 @@
 {
   "id": "./",
-  "name": "G.I.B. CONNECT — V0.9 — Connexion",
+  "name": "G.I.B. CONNECT — Édition militaire",
   "short_name": "G.I.B. CONNECT",
-  "description": "Prototype local : adhésions manuelles, annuaire, messages et événements. Pas de serveur réel.",
+  "description": "Application associative : connexion, profils, agenda, terrains et conversations partagés.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#151d19",
-  "theme_color": "#151d19",
+  "background_color": "#0b110e",
+  "theme_color": "#142018",
   "lang": "fr",
   "icons": [
     {

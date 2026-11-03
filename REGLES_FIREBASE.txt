@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signed(){return request.auth != null;}
+  function access(){return get(/databases/$(database)/documents/access/$(request.auth.uid)).data;}
+  function enabled(){return signed() && access().enabled == true && access().role in ['owner','admin','member'];}
+  function admin(){return enabled() && access().role in ['owner','admin'];}
+  function owner(){return enabled() && access().role == 'owner';}
+  function text(v,n){return v is string && v.size() <= n;}
+  function invited(){return signed() && request.auth.token.email_verified == true && exists(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())) && get(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())).data.enabled == true;}
+  function invitedRole(){return get(/databases/$(database)/documents/invitations/$(request.auth.token.email.lower())).data.role;}
+  match /access/{uid} {
+   allow get: if signed() && (request.auth.uid == uid || owner());
+   allow list: if owner();
+   allow create: if request.resource.data.keys().hasOnly(['role','enabled']) && request.resource.data.enabled == true && ((owner() && request.resource.data.role in ['admin','member']) || (signed() && uid == request.auth.uid && invited() && request.resource.data.role == invitedRole() && request.resource.data.role in ['admin','member']));
+   allow update, delete: if owner() && uid != request.auth.uid && resource.data.role != 'owner' && (request.method == 'delete' || (request.resource.data.keys().hasOnly(['role','enabled']) && request.resource.data.role in ['admin','member'] && request.resource.data.enabled is bool));
+  }
+  match /invitations/{email} {
+   allow get: if admin() || (signed() && request.auth.token.email_verified == true && email == request.auth.token.email.lower());
+   allow list: if admin();
+   allow create, update: if admin() && request.resource.data.keys().hasOnly(['role','enabled','createdAt']) && request.resource.data.enabled is bool && (request.resource.data.role == 'member' || (owner() && request.resource.data.role == 'admin')) && (request.method == 'create' || resource.data.role != 'admin' || owner());
+   allow delete: if admin() && (resource.data.role != 'admin' || owner());
+  }
+  match /profiles/{uid} {
+   function valid(){return request.resource.data.keys().hasOnly(['nickname','grade','speciality']) && text(request.resource.data.nickname,40) && request.resource.data.nickname.size()>0 && text(request.resource.data.grade,70) && request.resource.data.speciality is list && request.resource.data.speciality.size()<=20;}
+   allow read: if enabled();
+   allow create: if enabled() && valid() && (admin() || (uid==request.auth.uid && request.resource.data.grade=='' && request.resource.data.speciality.size()==0));
+   allow update: if enabled() && valid() && (admin() || (uid==request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname'])));
+  }
+  match /settings/{id} {
+   allow read: if enabled();
+   allow create, update: if admin() && id=='catalog' && request.resource.data.keys().hasOnly(['grades','specialities']) && request.resource.data.grades is list && request.resource.data.specialities is list && request.resource.data.grades.size()<=50 && request.resource.data.specialities.size()<=50;
+  }
+  match /terrains/{id} {
+   allow read: if enabled();
+   allow create, update: if admin() && request.resource.data.keys().hasOnly(['name','lat','lon','address','access']) && text(request.resource.data.name,80) && text(request.resource.data.address,200) && text(request.resource.data.access,600) && ((request.resource.data.lat=='' && request.resource.data.lon=='') || (request.resource.data.lat is number && request.resource.data.lon is number && request.resource.data.lat>=-90 && request.resource.data.lat<=90 && request.resource.data.lon>=-180 && request.resource.data.lon<=180));
+   allow delete: if admin();
+  }
+  match /memberships/{uid} {
+   allow get: if enabled() && (admin() || uid==request.auth.uid);
+   allow list: if admin();
+   allow create, update: if admin() && request.resource.data.keys().hasOnly(['period','amount','method','start','end','validated']) && request.resource.data.period in ['mensuelle','annuelle'] && request.resource.data.amount==(request.resource.data.period=='mensuelle'?15:150) && request.resource.data.method in ['especes','cheque','virement','helloasso'] && request.resource.data.start is string && request.resource.data.end is string && request.resource.data.end>=request.resource.data.start && request.resource.data.validated is bool;
+  }
+  match /events/{id} {
+   function validEvent(){return request.resource.data.keys().hasOnly(['name','type','date','time','place','terrainId','capacity','deadline','startsAt','closesAt','yesUids']) && text(request.resource.data.name,120) && request.resource.data.type in ['Partie','Réunion','Aménagement','Autre'] && text(request.resource.data.date,10) && text(request.resource.data.time,5) && text(request.resource.data.place,200) && text(request.resource.data.terrainId,100) && request.resource.data.capacity is int && request.resource.data.capacity>0 && request.resource.data.capacity<=500 && request.resource.data.yesUids is list && request.resource.data.yesUids.size()<=request.resource.data.capacity && request.resource.data.startsAt is timestamp && request.resource.data.closesAt is timestamp && request.resource.data.closesAt<request.resource.data.startsAt && text(request.resource.data.deadline,16);}
+   function ownAttendance(){let before=resource.data.yesUids.toSet();let after=request.resource.data.yesUids.toSet();let r=getAfter(/databases/$(database)/documents/events/$(id)/rsvps/$(request.auth.uid)).data;return enabled() && request.time<resource.data.closesAt && request.time<resource.data.startsAt && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['yesUids']) && request.resource.data.yesUids is list && request.resource.data.yesUids.size()==after.size() && after.size()<=resource.data.capacity && after.difference(before).hasOnly([request.auth.uid]) && before.difference(after).hasOnly([request.auth.uid]) && r.at==request.time && ((r.response=='yes' && request.auth.uid in after) || (r.response=='no' && !(request.auth.uid in after)));}
+   allow read: if enabled();
+   allow create: if admin() && validEvent() && request.resource.data.yesUids.size()==0;
+   allow update: if (admin() && validEvent() && request.resource.data.yesUids==resource.data.yesUids) || ownAttendance();
+   allow delete: if admin();
+   match /rsvps/{uid} {
+    allow read: if enabled();
+    allow create, update: if enabled() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['response','at']) && request.resource.data.response in ['yes','no'] && request.resource.data.at==request.time && request.time<get(/databases/$(database)/documents/events/$(id)).data.closesAt && ((request.resource.data.response=='yes' && uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids) || (request.resource.data.response=='no' && !(uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids)));
+   }
+  }
+  match /conversations/{id} {
+   function participant(){return enabled() && (resource.data.type=='general' || request.auth.uid in resource.data.participants);}
+   allow get: if participant() || (enabled() && !exists(/databases/$(database)/documents/conversations/$(id)));
+   allow list: if participant();
+   allow create: if enabled() && request.resource.data.keys().hasOnly(['name','type','participants','createdAt']) && text(request.resource.data.name,60) && request.resource.data.createdAt==request.time && request.resource.data.participants is list && request.resource.data.participants.size()<=100 && ((id=='general' && admin() && request.resource.data.type=='general') || (request.resource.data.type=='group' && admin() && request.auth.uid in request.resource.data.participants) || (request.resource.data.type=='private' && request.resource.data.participants.size()==2 && request.resource.data.participants.toSet().size()==2 && request.auth.uid in request.resource.data.participants));
+   allow update, delete: if false;
+   match /messages/{mid} {
+    function canRead(){let c=get(/databases/$(database)/documents/conversations/$(id)).data;return enabled() && (c.type=='general' || request.auth.uid in c.participants);}
+    allow read: if canRead();
+    allow create: if canRead() && request.resource.data.keys().hasOnly(['authorId','text','createdAt']) && request.resource.data.authorId==request.auth.uid && text(request.resource.data.text,2000) && request.resource.data.text.size()>0 && request.resource.data.createdAt==request.time;
+    allow delete: if canRead() && resource.data.authorId==request.auth.uid;
+   }
+  }
+  match /announcements/{id} {
+   allow read: if enabled();
+   allow create, update: if admin() && request.resource.data.keys().hasOnly(['title','body','createdAt']) && text(request.resource.data.title,120) && text(request.resource.data.body,2000);
+   allow delete: if admin();
+   match /acks/{uid} {
+    allow read: if enabled();
+    allow create, update: if enabled() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['at']) && request.resource.data.at==request.time;
+   }
+  }
+  match /polls/{id} {
+   allow read: if enabled();
+   allow create: if enabled() && request.resource.data.keys().hasOnly(['question','options','createdBy','createdAt']) && request.resource.data.createdBy==request.auth.uid && text(request.resource.data.question,200) && request.resource.data.options is list && request.resource.data.options.size()>=2 && request.resource.data.options.size()<=10 && request.resource.data.createdAt==request.time;
+   allow delete: if admin() || (enabled() && resource.data.createdBy==request.auth.uid);
+   match /votes/{uid} {
+    allow read: if enabled();
+    allow create, update: if enabled() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['choices']) && request.resource.data.choices is list && request.resource.data.choices.size()<=10 && request.resource.data.choices.hasOnly(get(/databases/$(database)/documents/polls/$(id)).data.options);
+   }
+  }
+  match /preferences/{uid} {
+   allow get: if enabled() && uid==request.auth.uid;
+   allow create, update: if enabled() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['messages','groups','events']) && request.resource.data.messages is bool && request.resource.data.groups is bool && request.resource.data.events is bool;
+  }
+  match /{document=**} {allow read, write: if false;}
+ }
+}
