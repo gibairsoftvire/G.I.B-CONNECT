@@ -1,16 +1,13 @@
-G.I.B. CONNECT V0.9.3 — Insignes de grade dans les messages
+G.I.B. CONNECT V0.9.4 — Outils en mode Modérateur uniquement
 
-Si V0.9.1 est déjà installée : aucune modification de Firebase nécessaire.
-1. Décompresser le ZIP.
-2. Dans le dépôt GitHub existant : Add file > Upload files.
-3. Déposer tous les fichiers et dossiers du ZIP au même niveau que index.html, puis Commit changes.
-4. Attendre le déploiement terminé et actualiser l’application avec Ctrl+F5.
+Depuis V0.9.1, V0.9.2 ou V0.9.3 : aucune modification Firebase nécessaire.
+Décompresser le ZIP puis déposer son contenu dans le dépôt GitHub existant avec Add file > Upload files > Commit changes. Attendre le déploiement terminé et actualiser avec Ctrl+F5.
 Ne supprimer ni le dépôt ni les données.
+Depuis une version antérieure à V0.9.1 : publier d’abord REGLES_FIREBASE.txt dans Firebase > Firestore Database > Règles.
 
-Le menu s’appelle désormais Membre. Les outils d’invitation restent disponibles dans cette page.
-Un petit insigne doré représente le grade devant le pseudo, sans écrire le nom du grade. Cela s’applique aussi aux messages déjà envoyés.
-Le nom du grade est disponible au survol et pour les lecteurs d’écran. Sans grade attribué, seul le pseudo apparaît.
-Les sept grades proposés ont chacun un insigne distinct de style G.I.B. Un grade personnalisé reçoit un insigne générique.
-Le grade se met à jour à partir du profil partagé ; il n’est pas saisi librement par l’auteur du message.
-
-Si vous venez d’une version antérieure à V0.9.1 : publier d’abord le contenu de REGLES_FIREBASE.txt dans Firebase > Firestore Database > Règles. Conserver les comptes et les données existants.
+Dans Profil > Mode d’utilisation, choisir Modérateur pour afficher les outils de création. Cette option apparaît uniquement pour les comptes autorisés.
+En mode Membre : aucun formulaire de création d’événement, terrain, sondage ou annonce ; aucun bouton de nouvelle conversation ni d’invitation. Les outils de gestion des profils, cotisations, grades et accès sont également masqués.
+Les conversations déjà disponibles restent utilisables : on peut lire, envoyer et supprimer ses propres messages, répondre aux événements et voter aux sondages.
+Le passage en mode Membre ferme les formulaires ouverts. Aucun passage automatique en mode Modérateur.
+Le compte principal conserve la gestion exclusive des quatre places de modérateurs, accessible en mode Modérateur.
+Le logo, le menu Membre et les insignes des grades sont conservés.
