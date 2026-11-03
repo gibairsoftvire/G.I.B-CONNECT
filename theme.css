@@ -19,3 +19,5 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:linear-gradient
 .message-author{display:inline-flex;align-items:center;gap:7px;min-width:0}.message-author span{overflow-wrap:anywhere}.rank-badge{display:inline-block;flex:0 0 25px;width:25px;height:31px;color:var(--gold);vertical-align:middle}.bubble small{align-items:center}
 
 .install-help{max-width:520px;width:calc(100% - 32px);padding:24px;background:#18241b;color:#f1f0e7;border:1px solid #cfb56c;border-radius:12px}.install-help::backdrop{background:#000b}.install-help p{line-height:1.6}.install-offer{margin-top:20px}html{padding-top:env(safe-area-inset-top)}nav{padding-bottom:max(12px,env(safe-area-inset-bottom))}
+
+nav button.has-new-message::after{content:"";display:block;width:7px;height:7px;border-radius:50%;background:#efb44a;position:absolute;top:4px;right:25%}

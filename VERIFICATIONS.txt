@@ -1,0 +1,10 @@
+V0.9.7 — VERIFICATIONS LOCALES
+- Syntaxe JavaScript des fichiers application, service worker et serveur.
+- Références HTML, identifiants uniques, format de la clé Web Push publique.
+- Serveur : auteur authentifié, destinataires participants, rôles actifs, préférence Messages, suspension et exception de la générale.
+- Notifications génériques : aucun texte de message privé dans la notification.
+- Reçus d’envoi, répétitions et reprise partielle après erreur.
+- Surveillance de secours et curseur de messages.
+- Client : inscription d’appareil, configuration compte principal + mode Modérateur, demande d’envoi authentifiée, file de reprise, désactivation.
+Les API Google/Firebase et le navigateur ont été simulés pour ces tests.
+Aucun serveur réel déployé, aucune notification réellement reçue sur téléphone dans ces vérifications. Un test entre deux comptes, sur Android et iPhone, reste indispensable après la configuration.

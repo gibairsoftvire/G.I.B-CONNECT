@@ -1,3 +1,3 @@
-# G.I.B. CONNECT V0.9.6
+# G.I.B. CONNECT V0.9.7 — Notifications à configurer
 
-Six places de modérateurs, promotion de membres existants par le compte principal, suspension manuelle des accès pour cotisation non validée. Publier impérativement les nouvelles règles avant la mise à jour GitHub. Voir INSTALLATION.txt.
+Clé Web Push intégrée. Publier les nouvelles règles puis configurer le serveur : voir serveur-google/CONFIGURATION.txt. Les notifications à distance ne sont pas actives tant que le serveur Google Apps Script et les téléphones ne sont pas configurés. Aucun déploiement serveur ni test réel sur téléphone effectué dans ce paquet.

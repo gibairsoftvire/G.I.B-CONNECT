@@ -1,0 +1,77 @@
+G.I.B. CONNECT V0.9.7 — CONFIGURATION DU SERVICE D’ENVOI
+
+STATUT
+Les fichiers sont préparés avec la clé publique Web Push fournie.
+Le serveur n’est pas encore déployé et aucune notification réelle n’a été testée sur Android/iPhone. Les tests locaux vérifient la logique, pas la configuration de ton compte Google.
+La clé publique seule ne permet pas l’envoi : suivre les étapes ci-dessous.
+
+1 — CREER LE PROJET GOOGLE APPS SCRIPT
+Ouvrir https://script.google.com/ avec le compte Google du G.I.B.
+Cliquer Nouveau projet ; le nommer GIB CONNECT Notifications.
+Dans Code.gs, remplacer le contenu par TOUT le contenu du fichier Code.gs fourni ici.
+Enregistrer.
+Dans Paramètres du projet, activer Afficher le fichier manifeste appsscript.json dans l’éditeur. Remplacer ce manifeste par le contenu du fichier appsscript.json fourni et enregistrer.
+Ne partager ce projet qu’avec une personne autorisée à administrer Firebase.
+
+2 — CONFIGURER LE COMPTE DE SERVICE, SANS PUBLIER SA CLE
+Dans Firebase > Paramètres du projet > Comptes de service > SDK Admin Firebase : Générer une nouvelle clé privée. Télécharger le fichier JSON sur ton ordinateur.
+Dans les Paramètres du projet Apps Script > Propriétés du script > Ajouter une propriété :
+- Nom : FIREBASE_SERVICE_ACCOUNT
+- Valeur : tout le contenu du JSON téléchargé (avec ses accolades).
+Enregistrer dans Apps Script uniquement.
+NE PAS déposer ce JSON sur GitHub, dans le ZIP ou dans le chat. NE PAS le coller dans Code.gs ni dans l’application. La clé reste dans les propriétés privées du serveur.
+Le compte doit appartenir au projet gib-connect et pouvoir lire/écrire Firestore et envoyer avec Firebase Cloud Messaging. Avec un compte de service dédié, les rôles utiles sont Cloud Datastore User et Firebase Cloud Messaging API Admin.
+Le script utilise des requêtes OAuth avec ce compte ; il n’a pas besoin d’accès à tes mails ou fichiers Drive.
+
+3 — VERIFIER LES API
+Dans Firebase > Paramètres du projet > Cloud Messaging : vérifier que Firebase Cloud Messaging API (V1) est activée. Le client utilise déjà la clé Web Push transmise.
+Dans Apps Script, sélectionner verifierConfiguration puis Exécuter. Autoriser ton propre script à effectuer ses requêtes externes. Le journal doit indiquer Configuration OAuth et Firestore valide. Cette vérification seule n’envoie aucune notification.
+Si une demande de facturation apparaît, s’arrêter et partager la capture : cette solution est conçue pour conserver Firebase Spark.
+
+4 — PUBLIER LE SERVEUR
+Dans Apps Script : Déployer > Nouveau déploiement > Application Web.
+Exécuter en tant que : Moi.
+Qui a accès : Tout le monde (y compris sans compte Google).
+Le point d’entrée vérifie ensuite le jeton Firebase, l’auteur réel du message et les droits ; il n’accepte pas d’envoyer un texte ou une liste de destinataires imposés par le navigateur.
+Copier l’URL se terminant par /exec. L’URL /dev ne convient pas.
+Si Tout le monde n’est pas disponible sur un compte professionnel, utiliser le compte Google personnel/associatif autorisé ou demander l’administrateur du compte.
+
+5 — METTRE A JOUR L’APPLICATION
+Dans Firestore > Règles, publier TOUT le contenu de REGLES_FIREBASE.txt de cette V0.9.7 avant de déposer les fichiers sur GitHub.
+Déposer les fichiers applicatifs à la racine du dépôt existant. Le dossier serveur-google sert à configurer Apps Script : il n’est pas nécessaire de le déposer sur GitHub. Aucun secret ne se trouve dans les fichiers livrés.
+Fermer puis rouvrir l’application installée ou actualiser Ctrl+F5.
+Avec le compte principal : Profil > Mode Modérateur > Service de notifications.
+Coller l’URL /exec, cocher Activer l’envoi des notifications de messages, Enregistrer le service.
+
+6 — ACTIVER LA SURVEILLANCE DE SECOURS
+Cette surveillance récupère aussi les messages dont l’émetteur ferme aussitôt l’application ou utilise encore l’ancienne version.
+Dans Firestore, créer/activer l’index à champ unique : groupe de collections messages, champ createdAt, croissant, portée Groupe de collections. Le fichier firestore.indexes.json décrit cet index.
+Dans Apps Script, exécuter surveillerMessages une fois. Si Firestore fournit un lien pour créer l’index, le suivre et attendre la fin de sa création.
+Puis sélectionner installerSurveillance et Exécuter : le déclencheur tourne environ une fois par minute. Ne pas créer plusieurs déclencheurs manuellement.
+L’application récente demande un envoi immédiat ; la surveillance est un secours avec un délai supplémentaire. Les doublons d’envoi déjà acceptés sont filtrés.
+
+7 — ACTIVER CHAQUE TELEPHONE
+Android : ouvrir G.I.B. CONNECT, idéalement depuis l’icône installée, puis Profil > Activer les notifications sur cet appareil > Autoriser.
+iPhone : iOS 16.4 minimum, Safari > Partager > Sur l’écran d’accueil ; ouvrir cette icône puis Profil > Activer les notifications sur cet appareil > Autoriser.
+Le bouton Tester cet appareil vérifie seulement l’affichage local.
+Plusieurs appareils peuvent être inscrits pour le même membre. Les préférences Notifications > Messages permettent de couper la réception de messages pour ce compte.
+
+8 — TEST REEL AVEC WAR
+Les deux comptes activent leurs notifications. Chaque message doit être envoyé par un autre compte que le destinataire.
+A. Mettre le téléphone destinataire sur l’écran d’accueil, puis envoyer un message dans la générale depuis l’autre compte.
+B. Vérifier l’alerte et toucher la notification : la discussion concernée doit s’ouvrir, après connexion si nécessaire.
+C. Refaire dans un salon partagé, puis une discussion privée.
+D. Vérifier qu’un compte non participant ne reçoit rien.
+E. Suspendre un membre sans cotisation validée : il doit continuer à recevoir la générale, mais pas les autres conversations.
+F. Vérifier sur Android ET iPhone : les tests locaux ne remplacent pas ces essais.
+En cas d’échec, transmettre le texte du statut Notifications et le message du journal Apps Script, sans clé privée ni jeton d’appareil.
+
+FONCTIONNEMENT ET LIMITES
+Le contenu des messages, les noms de salons privés et les pseudos ne figurent pas dans les notifications ; le texte est Tu as reçu un nouveau message.
+Le système n’envoie pas de notification à l’auteur de son propre message.
+Les droits actifs, les participants, les préférences et les suspensions sont vérifiés côté serveur. Les jetons d’appareil ne sont pas lisibles par les autres membres.
+La livraison dépend du réseau, des autorisations du téléphone, de ses modes silencieux/concentration/économie d’énergie et des services Google/Apple ; elle n’est jamais garantie à 100 %.
+Aucune carte bancaire n’est requise pour ce montage avec comptes personnels compatibles. FCM est sans frais ; Apps Script et Firestore ont des quotas. Le forfait Spark et les quotas Google doivent rester surveillés. Ce n’est pas un service illimité.
+Le déclencheur de secours traite 30 messages par passage et ignore les messages vieux de plus de 10 minutes ; il est prévu pour une petite association.
+Les reçus techniques pushDeliveries contiennent uniquement des identifiants d’envoi, jamais le texte ni les jetons. Tu peux activer une politique TTL sur updatedAt (quelques jours) pour limiter leur conservation si ton offre le permet, ou les retirer périodiquement avec l’administration Firestore.
+Après modification du serveur : Déployer > Gérer les déploiements > Modifier > Nouvelle version pour conserver la même URL.

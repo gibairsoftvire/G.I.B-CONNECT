@@ -1,4 +1,5 @@
 import { firebaseConfig } from './firebase-config.js';
+import {initPush} from './push.js';
 const $=id=>document.getElementById(id);
 let auth, db, api, unsubscribe, currentUid=null, loadedUid=null, opening=false, epoch=0;
 const status=message=>{$('authStatus').textContent=message;};
@@ -22,7 +23,7 @@ function errorMessage(error){const messages={
  'auth/email-already-in-use':'Un compte existe déjà avec cette adresse. Utilise Se connecter ou Mot de passe oublié.',
  'auth/weak-password':'Choisis un mot de passe d’au moins 12 caractères.'
 };return messages[error?.code]||'Le service ne répond pas ou sa configuration est incorrecte. Réessaie et indique le code : '+(error?.code||'connexion');}
-async function logout(){lock('Déconnexion…');try{await api.signOut(auth);location.reload();}catch(error){status(errorMessage(error));}}
+async function logout(){lock('Déconnexion…');try{await window.gibPush?.cleanup().catch(()=>{});await api.signOut(auth);location.reload();}catch(error){status(errorMessage(error));}}
 async function openApp(user,rights,token){
  if(token!==epoch)return;
  const canAdmin=['owner','moderator','admin'].includes(rights.role);
@@ -32,6 +33,7 @@ async function openApp(user,rights,token){
   if(opening)return;opening=true;
   Object.defineProperty(window,'gibSession',{value:session,configurable:true});
   window.gibBackend=Object.freeze({api,db,uid:user.uid,email:user.email||'membre',role:rights.role});
+  try{window.gibPush=initPush({api,db,uid:user.uid,role:rights.role,getIdToken:()=>auth.currentUser?.getIdToken()});}catch(_){$('notificationStatus').textContent='Notifications indisponibles ; la connexion reste utilisable.';}
   try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./app.js';script.onload=resolve;script.onerror=reject;document.body.append(script);});await window.gibReady;loadedUid=user.uid;}catch{window.gibStop?.();opening=false;lock('Synchronisation impossible. Vérifie que les nouvelles règles Firestore ont été publiées, puis actualise la page.');return;}
  }
  if(token!==epoch)return;

@@ -1,30 +1,12 @@
-G.I.B. CONNECT V0.9.6 — SIX MODERATEURS ET COTISATIONS
+G.I.B. CONNECT V0.9.7 — NOTIFICATIONS A CONFIGURER
 
-MISE A JOUR — DANS CET ORDRE
-1. Dans Firebase > Firestore Database > Règles : remplacer toutes les règles par le contenu de REGLES_FIREBASE.txt, puis Publier.
-2. Décompresser ce ZIP et déposer tout son contenu dans le dépôt GitHub existant avec Add file > Upload files > Commit changes. Garder index.html au même niveau. Ne déposer ni le ZIP ni un dossier parent.
-3. Attendre le déploiement, fermer et rouvrir l’application installée. Sur ordinateur, actualiser avec Ctrl+F5.
-Ne supprimer ni les comptes Authentication, ni les données Firestore, ni le dépôt GitHub. Les quatre places existantes sont conservées.
+1. Lire serveur-google/CONFIGURATION.txt et créer le service Apps Script.
+2. Publier REGLES_FIREBASE.txt dans Firebase > Firestore Database > Règles.
+3. Décompresser le ZIP et remplacer les fichiers de l’application dans le dépôt GitHub existant. Conserver index.html à la racine. Le dossier serveur-google sert à préparer le serveur, il peut rester sur l’ordinateur.
+4. Après le déploiement, fermer et rouvrir l’application. Sur ordinateur, Ctrl+F5.
+5. Compte principal > Profil > Mode Modérateur > Service de notifications : URL /exec et activation.
+6. Chaque téléphone : Profil > Activer les notifications sur cet appareil.
+7. Faire le test réel entre deux comptes décrit dans CONFIGURATION.txt.
 
-SIX MODERATEURS AU TOTAL
-Le compte principal reste distinct des six places (deux supplémentaires).
-Dans Profil, choisir Mode d’utilisation > Modérateur.
-- Pour une nouvelle personne : Membre > Inviter un modérateur. Transmettre soi-même le lien à l’adresse autorisée ; pas d’e-mail automatique.
-- Pour un membre déjà inscrit : Membre > Promouvoir modérateur, puis confirmer. Le compte, son pseudo, son grade et ses messages sont conservés. Le membre promu peut fermer puis rouvrir l’application ou se reconnecter pour charger ses nouveaux droits.
-- Dans Profil > Compte principal et modérateurs, six places sont affichées. Libérer une place retire les droits de modération et conserve le compte membre.
-Seul le compte principal attribue/retire les places, uniquement depuis le mode Modérateur. Un membre ordinaire ne peut jamais s’attribuer ces droits. Une septième place est refusée côté Firebase.
-
-SUSPENDRE POUR COTISATION NON VALIDEE
-Dans le mode Modérateur, ouvrir Cotisations.
-Sur la fiche d’un membre dont la cotisation est absente ou non validée, cliquer Suspendre les accès hors générale puis confirmer.
-Cela suspend : lecture de l’agenda et réponses aux événements ; lecture/vote des sondages ; accès aux anciennes et nouvelles conversations privées et de groupe (historique inclus).
-La conversation G.I.B. Général reste lisible et utilisable. Profil, Cotisations, annonces et terrains restent accessibles.
-La suspension est manuelle : aucun membre n’est suspendu automatiquement au déploiement.
-Le membre retrouve automatiquement les accès dès que la case Cotisation validée est enregistrée par un responsable. Le bouton Lever la suspension permet aussi de retirer la restriction manuellement.
-C’est le statut validée (la case du formulaire) qui détermine cette restriction : les dates de validité restent affichées mais ne déclenchent pas à elles seules une suspension.
-Une suspension conservée redeviendra effective si la validation de cotisation est retirée. Pour arrêter ce suivi, cliquer Lever la suspension.
-Les comptes responsables (principal/modérateurs) conservent leurs accès de gestion ; la suspension vise les comptes ayant le rôle membre.
-Les boutons de promotion et de suspension n’apparaissent pas en mode Membre.
-
-Les restrictions sont appliquées dans Firebase et se répercutent sur les appareils connectés. Les contenus déjà lus ou enregistrés par quelqu’un ne peuvent pas être effacés de sa mémoire ou de ses copies.
-L’installation sur écran d’accueil, le logo original, les insignes de grades et les données existantes sont conservés.
+Ne supprimer aucun compte ni aucune donnée Firebase. Ne jamais publier le JSON privé du compte de service sur GitHub ou dans le chat.
+Les fonctionnalités et droits de V0.9.6 sont conservés. Les nouvelles règles sont nécessaires, même si V0.9.6 fonctionne déjà.

@@ -46,6 +46,7 @@ service cloud.firestore {
   match /settings/{id} {
    allow read: if enabled();
    allow create, update: if admin() && id=='catalog' && request.resource.data.keys().hasOnly(['grades','specialities']) && request.resource.data.grades is list && request.resource.data.specialities is list && request.resource.data.grades.size()<=50 && request.resource.data.specialities.size()<=50;
+   allow create, update: if owner() && id=='push' && request.resource.data.keys().hasOnly(['enabled','relayUrl']) && request.resource.data.enabled is bool && request.resource.data.relayUrl is string && request.resource.data.relayUrl.matches('https://script[.]google[.]com/macros/s/[A-Za-z0-9_-]+/exec');
   }
   match /terrains/{id} {
    allow read: if enabled();
@@ -106,6 +107,13 @@ service cloud.firestore {
     allow create, update: if featureAccess() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['choices']) && request.resource.data.choices is list && request.resource.data.choices.size()<=10 && request.resource.data.choices.hasOnly(get(/databases/$(database)/documents/polls/$(id)).data.options);
    }
   }
+  match /pushDevices/{id} {
+   function valid(){return id.matches('[a-f0-9]{64}') && request.resource.data.keys().hasOnly(['uid','token','updatedAt']) && request.resource.data.uid==request.auth.uid && text(request.resource.data.token,4096) && request.resource.data.token.size()>20 && request.resource.data.updatedAt==request.time;}
+   allow get, list: if enabled() && resource.data.uid==request.auth.uid;
+   allow create, update: if enabled() && valid();
+   allow delete: if signed() && resource.data.uid==request.auth.uid;
+  }
+  match /pushDeliveries/{id} {allow read, write: if false;}
   match /preferences/{uid} {
    allow get: if enabled() && uid==request.auth.uid;
    allow create, update: if enabled() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['messages','groups','events']) && request.resource.data.messages is bool && request.resource.data.groups is bool && request.resource.data.events is bool;
