@@ -2,9 +2,22 @@
 (()=>{
  const MAX_LENGTH=200000;
  function valid(data){return typeof data==='string'&&data.length<=MAX_LENGTH&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(data);}
+ async function softwareJPEG(file){
+  const buffer=await file.arrayBuffer(),signature=new Uint8Array(buffer,0,Math.min(2,buffer.byteLength));
+  if(signature[0]!==255||signature[1]!==216)throw Error('native');
+  const bytes=await new Promise((resolve,reject)=>{
+   const worker=new Worker('./jpeg-worker.js');let timer=setTimeout(()=>finish(Error('timeout')),30000);
+   function finish(error,value){clearTimeout(timer);worker.terminate();error?reject(error):resolve(value);}
+   worker.onerror=()=>finish(Error('native'));worker.onmessage=e=>e.data.bytes?finish(null,new Uint8Array(e.data.bytes)):finish(Error(e.data.error||'native'));
+   worker.postMessage(buffer,[buffer]);
+  });
+  let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
+  const data='data:image/jpeg;base64,'+btoa(binary);if(!valid(data))throw Error('size');return data;
+ }
  async function compress(file){
   if(!file||!file.type.startsWith('image/'))throw Error('Choisis un fichier photo.');
   if(file.size>15*1024*1024)throw Error('Choisis une photo de moins de 15 Mo.');
+  if(typeof Worker==='function'&&typeof file.arrayBuffer==='function'){try{return await softwareJPEG(file);}catch(_){/* PNG, orientation EXIF ou indisponibilité : décodeur natif. */}}
   const url=URL.createObjectURL(file),image=new Image();let bitmap=null;
   try{
    await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(Error('Photo illisible. Essaie un fichier JPEG, PNG ou WebP.'));image.src=url;});
