@@ -1,3 +1,3 @@
-# G.I.B. CONNECT V0.9.8
+# G.I.B. CONNECT V0.9.9
 
-Préférences de notifications activées par défaut pour les profils sans préférences enregistrées. Écran d’activation au premier accès sur chaque appareil. L’autorisation du système reste nécessaire. Une désactivation explicite est conservée. Voir INSTALLATION.txt.
+Défilement automatique vers le dernier message à chaque envoi/réception et à l’ouverture de Messages. Le chargement des messages précédents conserve la position de lecture. Règles et serveur identiques à V0.9.8.
