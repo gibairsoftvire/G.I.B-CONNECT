@@ -1,6 +1,5 @@
-V0.9.11 — Vérifications
-Syntaxe de tous les fichiers JavaScript : valide.
-Tests simulés : validation JPEG, limite de taille, compression, ouverture et fermeture de la photo, contrôle du mode Modérateur, suppression de la pièce jointe, annulation des traitements périmés.
-Identifiants HTML uniques et contrôles photo présents.
-Deux copies des règles Firebase identiques ; ajout image réservé aux comptes autorisés par admin().
-Pas de test Firebase réel ni de test sur téléphone effectué pour cette livraison. Vérifier après publication avec un compte Modérateur puis un compte Membre.
+V0.9.14
+Worker réel exécuté avec le codec livré et le fichier nnCgATKJ.jpg fourni : JPEG de sortie décodé avec succès, 576 x 1280, 53046 octets, contenu non blanc vérifié numériquement et visuellement.
+Tests simulés des contrôles photo et syntaxe JS valides.
+app.js, theme.css et règles Firebase inchangés.
+Pas de test réel sur appareil Android/iOS.

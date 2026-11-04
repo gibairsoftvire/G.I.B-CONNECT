@@ -1,0 +1,5 @@
+V0.9.15 — Fenêtre notifications
+Base : V0.9.14 JPEG compatible.
+La fenêtre se ferme dès le clic Activer ; la demande système reste déclenchée directement par ce clic. Continuer est toujours disponible. Une autorisation accordée ferme aussi la fenêtre avant toute attente réseau.
+Publier tous les fichiers du dossier, dont push.js, index.html et sw.js, avec la même configuration Firebase.
+Vérification : syntaxe JS et tests de logique avec navigateur simulé. Test réel Safari/iPhone et réception distante à effectuer après publication.
