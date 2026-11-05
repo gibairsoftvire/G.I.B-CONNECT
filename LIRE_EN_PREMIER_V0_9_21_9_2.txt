@@ -1,0 +1,9 @@
+G.I.B. CONNECT V0.9.21.9.2
+
+IMPORTANT : publiez uniquement le contenu du fichier FIREBASE_REGLES_A_PUBLIER.rules dans Firebase Console > Firestore Database > Regles > Publier. Le fichier firestore.rules est strictement identique.
+
+Puis mettez a jour GitHub avec les fichiers de cette archive. Ne copiez pas les anciens fichiers Texte colle*.txt dans Firebase.
+
+Controles effectues : presence des regles boutiques, messages epingles, reponses ciblees, evenements multi-jours et date createdAt pour relances. Le code des relances necessite une configuration GitHub Actions distincte. Les tests sur votre projet Firebase reel ne sont pas possibles depuis cette archive.
+
+Si permission-denied persiste pour les boutiques alors que ces regles sont publiees, il faudra verifier le projet Firebase utilise par le navigateur et le statut auth avec les outils developpeur.
