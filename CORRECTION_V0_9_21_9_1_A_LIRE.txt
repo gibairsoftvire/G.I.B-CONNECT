@@ -1,0 +1,13 @@
+G.I.B. CONNECT V0.9.21.9.1 — RESTAURATION DES RÈGLES FIRESTORE
+
+Diagnostic : le fichier de règles envoyé le 05/11/2026 est une ancienne version (125 lignes). Il ne comporte ni les autorisations boutiques, ni les réponses ciblées, ni les fonctionnalités récentes de l’agenda.
+
+Ce dossier conserve les fichiers applicatifs de V0.9.21.9. Le fichier firestore.rules correspond aux fonctionnalités de cette version (boutiques, réponses ciblées, épinglage, agenda et relances).
+
+INSTALLATION :
+1. Dans Firebase Console > Firestore Database > Règles, remplacer l'intégralité des règles actuelles par firestore.rules présent à la racine de ce ZIP, puis PUBLIER.
+2. Les fichiers GitHub de la V0.9.21.9 n'ont pas besoin d'être remplacés s'ils sont déjà en place.
+3. Recharger l'application et vérifier boutiques, envoi de messages, réponses ciblées, salons privés et agenda.
+4. Les relances automatiques requièrent aussi la configuration du workflow GitHub Actions décrite dans INSTALLATION_V0_9_21_9.txt.
+
+IMPORTANT : ce ZIP est vérifié structurellement mais n'a pas été testé avec votre projet Firebase en direct. Ne jamais publier le fichier « Texte collé(7).txt » à la place des règles de ce dossier.
