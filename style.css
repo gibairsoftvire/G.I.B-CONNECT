@@ -53,3 +53,8 @@ nav span{font-size:10px;overflow-wrap:normal}
 
 /* Boutiques V0.9.20 */
 .boutique-list{display:grid;gap:12px;margin:18px 0}.boutique-entry{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #5b694b;border-radius:10px;background:#1a271c;flex-wrap:wrap}.boutique-entry img{width:105px;height:76px;object-fit:contain;background:#fff;border-radius:7px;padding:5px}.boutique-entry .boutique-info{flex:1;min-width:160px}.boutique-entry .boutique-info strong{display:block;font-size:1.1rem}.boutique-entry .actions{display:flex;gap:6px;flex-wrap:wrap}.boutique-entry a{overflow-wrap:anywhere}.boutique-list button{cursor:pointer}#boutiqueForm{display:grid;gap:12px}#boutiqueForm label{display:grid;gap:5px}#boutiqueForm input{max-width:100%}
+
+/* V0.9.21.1 — point rouge simple, sans compteur */
+.gib-unread-dot{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;background:#e33030;margin-left:6px;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
+nav button.gib-has-unread,.conversation-item.gib-has-unread{position:relative}
+nav button.gib-has-unread::after,.conversation-item.gib-has-unread::after{content:"";position:absolute;top:5px;right:5px;width:8px;height:8px;background:#e33030;border-radius:50%;pointer-events:none}

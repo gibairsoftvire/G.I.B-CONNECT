@@ -1,0 +1,14 @@
+G.I.B. CONNECT V0.9.21.1 — POINTS ROUGES
+
+Archive COMPLETE, base V0.9.20 avec correctif logos mobile.
+Ne pas installer par-dessus la V0.9.21 intégrant les quatre fonctions : cette version ne contient que le point 1.
+
+1. Sauvegarder les fichiers du site actuellement en ligne.
+2. Sur GitHub, remplacer les fichiers de l'application par le contenu complet de cette archive, en conservant la configuration Firebase du projet.
+3. Vérifier la publication GitHub Pages puis recharger l'application.
+4. Tester avec deux comptes : message non lu -> point rouge ; lecture -> disparition ; suppression par l'auteur avant lecture -> disparition ; suppression de salon -> disparition.
+5. Tester annonce lue/supprimée, sondage voté/supprimé, événement répondu/supprimé et salons privés interdits.
+
+Aucune modification des règles Firestore n'est requise pour les indicateurs : ils reposent sur les lectures et messages déjà autorisés.
+Limites : l'indicateur de conversation observe les 100 derniers messages par salon. Les essais réels multi-comptes et les contrôles Firebase ne sont pas exécutables hors de votre projet.
+Les sondages sans date de clôture explicite sont considérés comme ouverts jusqu'à suppression ; les événements futurs sans réponse restent signalés.

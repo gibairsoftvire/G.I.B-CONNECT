@@ -1,0 +1,10 @@
+G.I.B. CONNECT V0.9.20 — correctif logos et lecture Firebase
+
+1. GitHub : remplacer app.js et sw.js (ou envoyer tout le contenu du ZIP à la racine du dépôt).
+2. Firebase > Firestore Database > Règles : remplacer par firestore.rules du ZIP et publier. Ne pas toucher aux données.
+3. Actualiser avec Ctrl+F5, puis vérifier les quatre logos.
+4. Vérifier la synchronisation : ajouter une boutique test en mode modérateur puis la supprimer.
+
+Les quatre logos sont intégrés directement dans app.js : le dossier assets/boutiques n’est plus nécessaire à leur affichage initial.
+Les règles autorisent la lecture des boutiques aux utilisateurs authentifiés ; la modification reste réservée aux comptes admin/modérateur actifs.
+Si Firebase refuse encore les accès, vérifier les règles effectivement publiées et le compte connecté.

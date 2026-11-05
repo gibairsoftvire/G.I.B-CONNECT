@@ -1,0 +1,16 @@
+G.I.B. CONNECT — BASE COMPLETE DE TRAVAIL POUR V0.9.21
+
+Cette archive contient tous les fichiers de l'application et non un correctif partiel.
+Base : GIB_CONNECT_V0_9_20_CORRECTIF_LOGOS_FIREBASE(1).zip
+Correctif appliqué : app.js issu de GIB_CONNECT_CORRECTIF_LOGOS_MOBILE(1).zip
+
+IMPORTANT : Il s'agit d'une base consolidée de développement, PAS d'une V0.9.21 finalisée.
+Ne pas la déployer comme une nouvelle version sans tests.
+
+Fonctionnalités à intégrer dans V0.9.21 :
+1. Points rouges (messages/salons, annonces, événements, sondages).
+2. Fiches pratiques des parties (GPS, rubriques de consignes, historique, notifications).
+3. Messages épinglés (bandeau rouge compact, retrait par croix et confirmation).
+4. Réponses ciblées (citation compacte, appui long/clic droit, messages privés).
+
+Le projet contient notamment les règles Firestore ; leur mise en production doit être coordonnée avec le code.
