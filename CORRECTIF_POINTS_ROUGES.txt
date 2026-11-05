@@ -1,0 +1,7 @@
+G.I.B. CONNECT V0.9.21.1 - correctif 2
+Archive complete.
+Point rouge vif.
+Ecoute temps reel Firestore conservee et reconciliation de secours toutes les 6 secondes uniquement pour les salons avec messages non lus, lorsque la page est visible.
+Les notifications push du telephone ne sont pas modifiees.
+Sauvegarder la version GitHub avant remplacement.
+Tests multi-comptes requis.

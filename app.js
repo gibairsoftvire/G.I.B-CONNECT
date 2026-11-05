@@ -37,6 +37,31 @@ window.gibReady=(async()=>{
   }
   refreshRedDots();
  }
+ // Reconciliation de secours des salons non lus : certains navigateurs mobiles
+ // peuvent différer la notification de suppression en temps réel.
+ let unreadReconcileBusy=false;
+ async function reconcileUnreadDeletes(){
+  if(stopped||unreadReconcileBusy||document.visibilityState==='hidden')return;
+  const ids=[...unreadRooms].filter(([id,on])=>on===true&&roomWatches.has(id)).map(([id])=>id);
+  if(!ids.length)return;
+  unreadReconcileBusy=true;
+  try{
+   for(const id of ids){
+    if(!roomWatches.has(id))continue;
+    const [msgSnap,readSnap]=await Promise.all([
+     F.getDocs(F.query(coll('conversations',id,'messages'),F.orderBy('createdAt','desc'),F.limit(100))),
+     F.getDoc(ref('conversations',id,'reads',uid))
+    ]);
+    const seen=readSnap.exists()?readSnap.data().lastSeenAt?.toMillis?.()??null:null;
+    const unread=rows(msgSnap).some(m=>m.authorId!==uid&&m.createdAt?.toMillis?.()&&(seen===null||m.createdAt.toMillis()>seen));
+    unreadRooms.set(id,unread);
+   }
+   refreshRedDots();
+  }catch(err){console.warn('Synchronisation des points rouges',err.code||err.message);}
+  finally{unreadReconcileBusy=false;}
+ }
+ setInterval(reconcileUnreadDeletes,6000);
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reconcileUnreadDeletes();});
 
  let restrictions={},featuresReady=false,featuresEnabled=null,featureStops=[],featuresEpoch=0,chatEpoch=0;
  const blocked=()=>restrictions[uid]?.suspended===true&&memberships[uid]?.validated!==true;

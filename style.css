@@ -58,3 +58,7 @@ nav span{font-size:10px;overflow-wrap:normal}
 .gib-unread-dot{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;background:#e33030;margin-left:6px;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
 nav button.gib-has-unread,.conversation-item.gib-has-unread{position:relative}
 nav button.gib-has-unread::after,.conversation-item.gib-has-unread::after{content:"";position:absolute;top:5px;right:5px;width:8px;height:8px;background:#e33030;border-radius:50%;pointer-events:none}
+
+/* Points de notification rouge vif, y compris avec le thème militaire. */
+.gib-unread-dot{background-color:#ff2020!important;box-shadow:none!important}
+nav button.gib-has-unread::after,.conversation-item.gib-has-unread::after{background:#ff2020!important;box-shadow:none!important}
