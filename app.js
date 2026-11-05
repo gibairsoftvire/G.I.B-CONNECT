@@ -41,28 +41,38 @@ window.gibReady=(async()=>{
  function renderMessages({scrollToLatest=false,preserveAnchor=false}={}){const log=$('chatLog'),oldTop=log.scrollTop,oldHeight=log.scrollHeight;const c=conversations.find(c=>c.id===activeConversation);$('conversationHeading').textContent=c?.name||'Choisis un salon';$('chatInput').disabled=!c;$('chatForm').querySelector('button').disabled=!c||chatSending;$('chatLog').innerHTML=messages.map(m=>`<div class="bubble ${m.authorId===uid?'own':''}"><small><strong class="message-author">${rankBadge(m.authorId)}<span>${esc(nickname(m.authorId))}</span></strong><time>${esc(dateLabel(m.createdAt))}</time></small><div class="message-body">${esc(m.text)}</div>${photoHTML(m.image,'message',m.id)}${admin()?`<button class="secondary" data-read-message="${esc(m.id)}">Lectures</button>`:''}${m.authorId===uid?`<button class="secondary" data-delete-message="${esc(m.id)}">Supprimer</button>`:''}</div>`).join('')||'<p class="note">Aucun message.</p>';$('olderMessages').classList.toggle('hidden',messages.length<chatLimit);if(scrollToLatest)scrollChatToLatest();else log.scrollTop=preserveAnchor?oldTop+(log.scrollHeight-oldHeight):oldTop;}
  async function markRead(){if(readPending||!messages.length||document.visibilityState!=='visible'||!document.querySelector('#messages.page.active'))return;const c=conversations.find(x=>x.id===activeConversation);if(!c)return;const last=messages.at(-1);if(!last?.createdAt?.toMillis)return;const key=activeConversation+':'+last.id;if(key===readMarker)return;readPending=true;try{await F.setDoc(ref('conversations',activeConversation,'reads',uid),{lastSeenAt:last.createdAt,at:stamp()});readMarker=key;}catch(e){console.warn('Lecture:',e.code||e.message)}finally{readPending=false;}}
  async function showReads(mid){const msg=messages.find(m=>m.id===mid),c=conversations.find(c=>c.id===activeConversation);if(!msg||!c||!admin())return;const snap=await F.getDocs(coll('conversations',activeConversation,'reads'));const read=new Map(rows(snap).map(r=>[r.id,r]));const people=c.type==='general'?members.map(m=>m.id):c.participants;const lines=people.filter(id=>id!==msg.authorId).map(id=>{const r=read.get(id);return nickname(id)+' : '+(r?.lastSeenAt?.toMillis?.()>=msg.createdAt?.toMillis?.()?'Lu (dernière activité : '+dateLabel(r.at)+')':'Non confirmé');});alert('Lectures du message :\n'+lines.join('\n'));}
+ function roomDialog(title, content){
+  document.getElementById('gibRoomDialog')?.remove();
+  const overlay=document.createElement('div');overlay.id='gibRoomDialog';overlay.className='gib-modal-overlay';
+  overlay.innerHTML=`<div class="gib-modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><h3>${esc(title)}</h3><div class="gib-modal-content">${content}</div><div class="gib-modal-actions"><button type="button" class="secondary" data-close-room>Fermer</button></div></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{if(e.target===overlay||e.target.closest('[data-close-room]'))overlay.remove();});
+  return overlay;
+ }
  async function manageConversation(id){
   if(!admin()||id==='general')return;
-  const c=conversations.find(x=>x.id===id);
-  if(!c||!['group','private'].includes(c.type))return;
+  const c=conversations.find(x=>x.id===id);if(!c)return;
   const current=[...new Set(c.participants||[])];
-  const candidates=members.filter(m=>m.id&&m.id!==uid);
-  const choices=candidates.map((m,i)=>`${i+1}. ${nickname(m.id)} ${current.includes(m.id)?'[présent]':'[absent]'}`).join('\n');
-  const answer=prompt('Salon : '+c.name+'\nParticipants actuels : '+current.map(nickname).join(', ')+'\n\n'+choices+'\n\nIndique les numéros des membres à AJOUTER (séparés par des virgules), ou laisse vide pour passer au retrait :');
-  if(answer===null)return;
-  const parse=value=>[...new Set(value.split(/[,; ]+/).filter(Boolean).map(x=>Number(x)))].map(n=>candidates[n-1]?.id).filter(Boolean);
-  const added=parse(answer).filter(id=>!current.includes(id));
-  const removal=prompt('Indique les numéros des membres à RETIRER (séparés par des virgules).\nLaisse vide pour ne retirer personne.\n\n'+choices);
-  if(removal===null)return;
-  const removed=parse(removal).filter(id=>current.includes(id));
-  const next=[...new Set([...current,...added])].filter(id=>!removed.includes(id));
-  if(!next.length){alert('Le salon doit conserver au moins un participant.');return;}
-  if(!added.length&&!removed.length)return;
-  if(!confirm('Confirmer les modifications du salon « '+c.name+' » ?\nAjouts : '+(added.map(nickname).join(', ')||'aucun')+'\nRetraits : '+(removed.map(nickname).join(', ')||'aucun')+'\nLes nouveaux membres verront tout l’historique.'))return;
-  await F.updateDoc(ref('conversations',id),{participants:next});
-  notice('Participants du salon mis à jour.');
+  const available=members.filter(m=>m.id&&!current.includes(m.id));
+  const html=`<p>Participants du salon « ${esc(c.name)} »</p><div class="gib-member-list">${current.map(id=>`<div class="gib-member-row"><span>${esc(nickname(id))}${id===uid?' (vous)':''}</span><button type="button" class="gib-member-remove" data-remove-member="${esc(id)}" aria-label="Retirer ${esc(nickname(id))}">×</button></div>`).join('')}</div><label for="gibAddMember">Ajouter un membre</label><div class="gib-member-add"><select id="gibAddMember"><option value="">Choisir un membre</option>${available.map(m=>`<option value="${esc(m.id)}">${esc(m.nickname)}</option>`).join('')}</select><button type="button" data-add-member>Ajouter</button></div><p class="note">Les nouveaux membres voient l’historique complet du salon.</p>`;
+  const modal=roomDialog('Gérer les membres',html);
+  const save=async next=>{if(!next.length){notice('Un salon doit conserver au moins un participant.');return;}try{await F.updateDoc(ref('conversations',id),{participants:next});modal.remove();notice('Participants mis à jour.');}catch(e){notice(e.code==='permission-denied'?'Accès refusé par Firestore : publie les règles de cette version et vérifie ton rôle modérateur.':e.message);}};
+  modal.querySelectorAll('[data-remove-member]').forEach(button=>button.addEventListener('click',()=>{const memberId=button.dataset.removeMember;if(confirm('Retirer '+nickname(memberId)+' de ce salon ?'))save(current.filter(x=>x!==memberId));}));
+  modal.querySelector('[data-add-member]').addEventListener('click',()=>{const memberId=modal.querySelector('#gibAddMember').value;if(memberId&&!current.includes(memberId))save([...current,memberId]);});
  }
- async function deleteConversation(id){if(!admin()||id==='general')return;const c=conversations.find(c=>c.id===id);if(!c||!confirm('SUPPRESSION DÉFINITIVE du salon « '+c.name+' » et de tous ses messages et photos ? Cette opération est irréversible.'))return;const check=prompt('Pour confirmer, écris SUPPRIMER');if(check!=='SUPPRIMER')return;const r=ref('conversations',id);await F.updateDoc(r,{deleting:true});let count=0;for(;;){const snap=await F.getDocs(F.query(coll('conversations',id,'messages'),F.limit(200)));if(snap.empty)break;for(const d of snap.docs){await F.deleteDoc(d.ref);count++;}}const reads=await F.getDocs(coll('conversations',id,'reads'));for(const d of reads.docs)await F.deleteDoc(d.ref);await F.deleteDoc(r);if(activeConversation===id){activeConversation='general';watchMessages();}notice('Salon supprimé : '+count+' message(s).');}
+ async function deleteConversation(id){
+  if(!admin()||id==='general')return;
+  const c=conversations.find(x=>x.id===id);
+  if(!c||!confirm('Supprimer définitivement le salon « '+c.name+' », ses messages et ses photos ?\nCette action est irréversible.'))return;
+  const r=ref('conversations',id);
+  await F.updateDoc(r,{deleting:true});
+  let count=0;
+  for(;;){const snap=await F.getDocs(F.query(coll('conversations',id,'messages'),F.limit(200)));if(snap.empty)break;for(const d of snap.docs){await F.deleteDoc(d.ref);count++;}}
+  const reads=await F.getDocs(coll('conversations',id,'reads'));for(const d of reads.docs)await F.deleteDoc(d.ref);
+  await F.deleteDoc(r);
+  if(activeConversation===id){activeConversation='general';watchMessages();}
+  notice('Salon supprimé : '+count+' message(s).');
+ }
  function selectConversation(id){if(id!=='general'&&!featureView())return;if(!conversations.some(c=>c.id===id))return;chatPhoto.clear();activeConversation=id;chatLimit=50;watchMessages();renderConversationList();go('messages');}
  function watchMessages({loadOlder=false}={}){chatUnsubscribe?.();const epoch=++chatEpoch;let first=true;if(!loadOlder){messages=[];renderMessages();}chatUnsubscribe=F.onSnapshot(F.query(coll('conversations',activeConversation,'messages'),F.orderBy('createdAt','desc'),F.limit(chatLimit)),s=>{if(stopped||epoch!==chatEpoch)return;const beforeIds=new Set(messages.map(m=>m.id)),beforeLast=messages.at(-1)?.id,beforeCount=messages.length;const next=rows(s).reverse(),last=next.at(-1)?.id,newLatest=!!last&&!beforeIds.has(last),olderAdded=next.length>beforeCount&&last===beforeLast;messages=next;renderMessages({scrollToLatest:first&&!loadOlder||newLatest,preserveAnchor:first&&loadOlder||olderAdded&&!newLatest});first=false;markRead();},e=>notice('Messages non accessibles : '+e.code));}
 
