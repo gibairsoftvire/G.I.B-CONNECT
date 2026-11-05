@@ -215,21 +215,25 @@ window.gibReady=(async()=>{
     const ev=events.find(x=>x.id===d.deleteEvent);
     if(!ev)return;
     if(!confirm('Supprimer définitivement l’événement « '+ev.name+' » ?\n\nLes réponses et consignes associées seront également supprimées. Cette action est irréversible.'))return;
-    // Firestore does not cascade deletes to subcollections: clean associated documents first.
-    const eventRef=ref('events',ev.id);
-    const childCollections=['rsvps','instructionReads','instructionHistory'];
+    // First discover all children; do not delete anything if a read is denied.
     const childDocs=[];
-    for(const name of childCollections){
-      const snap=await F.getDocs(coll('events',ev.id,name));
+    for(const name of ['rsvps','instructionReads','instructionHistory']){
+      let snap;
+      try {snap=await F.getDocs(coll('events',ev.id,name));}
+      catch(error){
+        throw Error('Suppression bloquée lors de la lecture de '+name+' : '+(error.code||error.message)+'. Aucune donnée supprimée.');
+      }
       snap.docs.forEach(doc=>childDocs.push(doc.ref));
     }
-    // Stay below Firestore's 500-write batch limit. Delete parent only after children.
+    // Delete children in bounded batches; report the exact failed step.
     for(let i=0;i<childDocs.length;i+=400){
       const batch=F.writeBatch(db);
       childDocs.slice(i,i+400).forEach(r=>batch.delete(r));
-      await batch.commit();
+      try {await batch.commit();}
+      catch(error){throw Error('Suppression bloquée pendant l’effacement des données associées : '+(error.code||error.message)+'. Certaines données associées peuvent avoir été supprimées.');}
     }
-    await F.deleteDoc(eventRef);
+    try {await F.deleteDoc(ref('events',ev.id));}
+    catch(error){throw Error('Suppression du document événement refusée : '+(error.code||error.message)+'.');}
     notice('Événement supprimé.');
     return;
   }

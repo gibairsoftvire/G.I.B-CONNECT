@@ -1,0 +1,9 @@
+G.I.B. CONNECT V0.9.21.4 — diagnostic suppression des événements
+
+1. Conserver une sauvegarde de la version actuelle.
+2. Déployer le contenu COMPLET de ce ZIP à la racine du dépôt GitHub Pages.
+3. Ne pas republier les règles Firestore identiques : elles sont inchangées dans cette version.
+4. Actualiser G.I.B. CONNECT, tenter de supprimer un événement de TEST et relever le message détaillé.
+5. Communiquer le message exact pour identifier la permission refusée.
+
+Cette version améliore le diagnostic, elle ne garantit pas la correction d’une autorisation Firebase non identifiée.
