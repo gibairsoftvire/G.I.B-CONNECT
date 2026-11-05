@@ -1,0 +1,1 @@
+V0.9.16 - Accusés de lecture par dernier message vu (heure de dernière activité), suppression définitive par administrateur, salons privés invisibles aux non-participants. Déployer firestore.rules avec les fichiers. Vérifier les tests sur Firebase avant mise en production. Les données en sauvegardes/caches externes ne sont pas effacées par cette suppression.
