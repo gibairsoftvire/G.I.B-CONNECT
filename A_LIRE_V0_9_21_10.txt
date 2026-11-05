@@ -1,0 +1,15 @@
+G.I.B. CONNECT V0.9.21.10 — Commandant JB Airsoft
+
+Base : V0.9.21.9.3 validée.
+Le compte Firebase ayant le rôle owner est le Commandant. Son UID reste inchangé.
+Il reste propriétaire technique et possède uniquement le mode Modérateur à l’écran.
+Impossible de voter aux sondages ou de répondre aux événements : contrôles interface et Firestore.
+Le moteur de relances exclut les comptes owner.
+
+INSTALLATION :
+1. Remplacer les fichiers GitHub avec ceux du ZIP (y compris automation et .github).
+2. Copier le fichier REGLES_FIRESTORE_A_COPIER_DANS_FIREBASE.txt dans Firebase > Firestore > Règles, puis Publier.
+3. Recharger la PWA et se reconnecter si nécessaire.
+4. Vérifier sur JB Airsoft (owner) et sur un membre normal.
+
+ATTENTION : l’automatisation des relances exige toujours la configuration GitHub Actions. Les anciennes réponses du compte owner ne sont pas effacées automatiquement.

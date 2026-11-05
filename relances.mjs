@@ -7,7 +7,7 @@ admin.initializeApp({credential:admin.credential.cert(credentials)});
 const db=admin.firestore(), messaging=admin.messaging();
 const now=Date.now(), DAY=86400000;
 const users=await db.collection('access').where('enabled','==',true).get();
-const eligible=new Set(users.docs.map(d=>d.id));
+const eligible=new Set(users.docs.filter(d=>d.data().role!=='owner').map(d=>d.id));
 const [events,polls,devices]=await Promise.all([db.collection('events').get(),db.collection('polls').get(),db.collection('pushDevices').get()]);
 const tokens=new Map();for(const d of devices.docs){const v=d.data();if(eligible.has(v.uid)&&typeof v.token==='string'){if(!tokens.has(v.uid))tokens.set(v.uid,[]);tokens.get(v.uid).push(v.token);}}
 function due(created){if(!created?.toMillis)return null;const age=now-created.toMillis();if(age<7*DAY)return null;const n=age<14*DAY?7:age<15*DAY?14:15+Math.floor((age-15*DAY)/DAY);return n;}
