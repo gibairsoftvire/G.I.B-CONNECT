@@ -1,0 +1,6 @@
+G.I.B. CONNECT V0.9.21.7 — Message épinglé unique par salon
+1. Publier tous les fichiers du ZIP sur GitHub Pages.
+2. Copier firestore.rules dans Firebase Console > Firestore > Règles et publier (ne pas ouvrir les accès).
+3. Actualiser l’application, sélectionner mode Modérateur, épingler un message, tester avec un autre compte.
+4. Vérifier la confidentialité des salons privés et le remplacement après confirmation.
+Note : la navigation vers les messages très anciens peut nécessiter le chargement de davantage de messages.

@@ -72,3 +72,6 @@ nav button.gib-has-unread::after,.conversation-item.gib-has-unread::after{backgr
 
 /* V0.9.21.6 — choix des journées */
 .gib-days{padding:12px;margin:10px 0;border:1px solid var(--border,#677);border-radius:9px}.gib-day{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:.92rem}.gib-day input{width:18px;height:18px;flex:none}.gib-day-summary{margin:10px 0;padding:8px;border:1px solid #7776;border-radius:8px}
+
+/* V0.9.21.7 — un seul message épinglé par salon */
+.gib-pinned-banner[hidden]{display:none!important}.gib-pinned-banner{display:flex;align-items:center;gap:8px;padding:6px 9px;margin:7px 0;background:#233225;border:1px solid #6d8054;border-radius:7px;max-width:100%;}.gib-pinned-jump{flex:1;min-width:0;display:flex;align-items:center;gap:10px;text-align:left;background:transparent!important;border:0!important;padding:2px!important;color:#e8f2dc!important;cursor:pointer}.gib-pinned-jump strong{white-space:nowrap;font-size:12px}.gib-pinned-jump span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.gib-pinned-remove{flex:none;background:transparent!important;border:1px solid #6d8054!important;padding:3px 9px!important}.gib-pin-highlight{outline:2px solid #b6d77d;outline-offset:2px}
