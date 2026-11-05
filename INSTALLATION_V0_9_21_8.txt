@@ -1,0 +1,5 @@
+V0.9.21.8 — Réponses ciblées
+1. Mettre tous les fichiers de ce ZIP à la racine du dépôt GitHub Pages.
+2. Sauvegarder les règles Firebase actuelles, puis publier firestore.rules fourni (modification du champ replyTo seulement depuis les règles V0.9.21.7 corrigées).
+3. Rafraîchir l’application et tester Répondre, Annuler, clic sur citation, photo et compte membre.
+4. Vérifier que les boutiques et les salons privés fonctionnent toujours.
