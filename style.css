@@ -50,3 +50,6 @@ nav span{font-size:10px;overflow-wrap:normal}
 .gib-modal h3{margin:0 0 16px}.gib-member-list{display:grid;gap:7px;margin:12px 0 20px}.gib-member-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;background:#2b3a2d;border-radius:7px}
 .gib-member-remove{background:#ae2020!important;color:white!important;border:1px solid #ffb4aa!important;border-radius:7px;min-width:38px;min-height:38px;font-size:27px;cursor:pointer}
 .gib-member-add{display:flex;gap:8px;margin:8px 0}.gib-member-add select{flex:1;min-width:0}.gib-modal-actions{display:flex;justify-content:flex-end;margin-top:16px}
+
+/* Boutiques V0.9.20 */
+.boutique-list{display:grid;gap:12px;margin:18px 0}.boutique-entry{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #5b694b;border-radius:10px;background:#1a271c;flex-wrap:wrap}.boutique-entry img{width:105px;height:76px;object-fit:contain;background:#fff;border-radius:7px;padding:5px}.boutique-entry .boutique-info{flex:1;min-width:160px}.boutique-entry .boutique-info strong{display:block;font-size:1.1rem}.boutique-entry .actions{display:flex;gap:6px;flex-wrap:wrap}.boutique-entry a{overflow-wrap:anywhere}.boutique-list button{cursor:pointer}#boutiqueForm{display:grid;gap:12px}#boutiqueForm label{display:grid;gap:5px}#boutiqueForm input{max-width:100%}

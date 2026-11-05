@@ -1,0 +1,3 @@
+G.I.B. CONNECT V0.9.20 — Boutiques en ligne
+4 boutiques initiales avec logos fournis par utilisateur.
+Ajout, modification et suppression via Firebase.

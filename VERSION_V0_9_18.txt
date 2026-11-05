@@ -1,0 +1,4 @@
+G.I.B. CONNECT V0.9.18 — Croix rouge de suppression des salons en mode modérateur.
+Conserve les fonctionnalités de la V0.9.17 et les règles Firebase existantes.
+Mise à jour GitHub : app.js et style.css.
+La suppression reste soumise aux confirmations et aux règles Firestore.

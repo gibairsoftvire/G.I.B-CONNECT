@@ -1,0 +1,5 @@
+1. Sauvegarder le depot GitHub et les regles Firestore actuelles.
+2. Mettre a jour app.js et style.css sur GitHub (et les autres fichiers si necessaire).
+3. Copier firestore.rules dans Firebase > Firestore Database > Regles, tester puis publier.
+4. Actualiser avec Ctrl+F5 et tester avec deux comptes.
+Attention : si acces refuse persiste, verifier les documents access et moderators ainsi que les regles effectivement publiees.

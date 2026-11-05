@@ -1,0 +1,5 @@
+1. Sauvegarder la version GitHub actuelle.
+2. Mettre à jour les fichiers de ce ZIP sur GitHub (index.html, app.js, style.css, assets/boutiques et autres fichiers sans supprimer les existants).
+3. Dans Firebase > Firestore Database > Règles, sauvegarder les règles publiées puis remplacer par firestore.rules et publier.
+4. Actualiser le navigateur avec Ctrl+F5. Tester en mode modérateur et membre.
+5. Ne pas supprimer les collections Firebase existantes.
