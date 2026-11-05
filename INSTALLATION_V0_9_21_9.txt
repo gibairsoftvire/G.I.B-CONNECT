@@ -1,0 +1,11 @@
+G.I.B. CONNECT V0.9.21.9 — RELANCES AUTOMATIQUES
+
+1. Mettre les fichiers de cette archive dans le dépôt GitHub, y compris .github/workflows/relances.yml et automation/.
+2. Publier firestore.rules dans Firebase (la règle événements accepte désormais createdAt).
+3. Dans GitHub > Settings > Secrets and variables > Actions > New repository secret, créer FIREBASE_SERVICE_ACCOUNT avec le JSON du compte de service Firebase. Ne jamais déposer cette clé dans le dépôt ni la partager dans une conversation.
+4. Dans GitHub > Actions, autoriser les workflows puis lancer « Relances GIB CONNECT » manuellement pour vérifier les journaux. Le déclenchement programmé est horaire, et GitHub peut le retarder.
+5. Les notifications utilisent Firebase Cloud Messaging et les appareils déjà inscrits dans pushDevices. Vérifier les autorisations FCM du compte de service.
+6. Le calendrier est calculé à partir de la création de chaque sondage/événement : J+7, J+14, puis J+15, J+16... Les événements créés avant cette version n'ont pas de champ createdAt et ne seront pas relancés automatiquement : pas de date de création inventée.
+7. L'arrêt est immédiat à la réponse (sondage : au moins un choix, événement : réponse OUI ou NON), à la suppression, ou au début de l'événement. Si un sondage n'a pas de date de clôture, ses relances continuent jusqu'à sa suppression ou réponse.
+8. Un enregistrement reminderDispatches empêche les doublons pour un jour donné. Les relances sont des notifications push, pas des messages privés. Un échec d'envoi n'est pas automatiquement réessayé le même jour.
+9. Sans configuration du secret et activation du workflow GitHub Actions, aucune relance ne sera envoyée automatiquement. Cette livraison n'a pas été testée sur votre Firebase réel.

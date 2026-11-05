@@ -1,0 +1,1 @@
+{"name":"gib-connect-relances","private":true,"type":"module","scripts":{"run":"node relances.mjs"},"dependencies":{"firebase-admin":"^13.0.0"}}
