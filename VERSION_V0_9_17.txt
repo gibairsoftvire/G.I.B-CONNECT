@@ -1,0 +1,5 @@
+G.I.B. CONNECT V0.9.17 — Gestion des participants
+Administrateurs : bouton « Gérer les membres » pour les salons privés et de groupe.
+Ajout/retrait sans effacer les messages. Nouveaux membres : historique complet.
+Déployer les fichiers sur GitHub et publier firestore.rules dans Firebase.
+Tester avec plusieurs comptes avant usage général.
