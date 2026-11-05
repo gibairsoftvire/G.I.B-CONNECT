@@ -1,0 +1,9 @@
+G.I.B. CONNECT V0.9.21.2 — Fiches pratiques Agenda
+
+1. Sauvegarder la version actuellement en ligne.
+2. Remplacer les fichiers de la racine GitHub Pages par le contenu de cette archive (pas le ZIP).
+3. Mettre à jour les règles Firebase Firestore avec firestore.rules dans la console Firebase (Publier).
+4. Attendre le déploiement GitHub Pages puis recharger l’application.
+5. Tester avec deux comptes : sélection terrain, bouton GPS, consignes, édition et accusé de lecture.
+
+Cette version est issue de la V0.9.21.1 notifications mobiles validée. Les tests Firebase réels ne peuvent pas être effectués hors de votre projet.

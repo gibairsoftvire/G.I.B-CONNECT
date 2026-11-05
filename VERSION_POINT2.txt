@@ -1,0 +1,1 @@
+V0.9.21.2 — Fiches pratiques de l’agenda. Terrain depuis le répertoire, bouton GPS dynamique, sécurité, équipement, historique et lecture des consignes.
