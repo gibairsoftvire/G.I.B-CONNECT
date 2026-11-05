@@ -1,0 +1,11 @@
+G.I.B. CONNECT V0.9.21.6 — Présences par journée
+
+1. Remplacer les fichiers de l’application sur GitHub Pages.
+2. Publier les nouvelles règles firestore.rules dans Firebase (elles sont différentes des règles V0.9.21.5).
+3. Actualiser l’application, créer un événement de 2 ou 3 jours et essayer une inscription.
+4. Tester avec deux comptes : choix de jours, changement de réponse, consultation admin des présences.
+
+IMPORTANT : la capacité maximale reste globale à l’événement, pas par journée. Pour une gestion stricte de capacité par jour, une évolution serveur dédiée sera nécessaire.
+Événements d’un jour : boutons OUI/NON inchangés.
+Les anciens inscrits sans sélection de journées sont affichés par défaut comme présents tous les jours dans le récapitulatif administrateur.
+Les inscriptions sont possibles jusqu’à 31 jours d’événement dans cette version.

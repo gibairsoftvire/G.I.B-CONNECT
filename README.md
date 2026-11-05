@@ -1,3 +1,3 @@
-# G.I.B. CONNECT V0.9.14
-Conversion JPEG indépendante du navigateur. Voir INSTALLATION.txt.
-Codec jpeg-js : licence incluse dans vendor/JPEG-JS-LICENSE.txt.
+G.I.B. CONNECT V0.9.21.6 — application complète
+
+Ajout de la sélection des jours de présence pour les événements sur plusieurs jours et récapitulatif administrateur par journée. Voir INSTALLATION_V0_9_21_6.txt.

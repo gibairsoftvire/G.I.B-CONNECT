@@ -85,7 +85,7 @@ service cloud.firestore {
    }
    match /rsvps/{uid} {
     allow read: if featureAccess();
-    allow create, update: if featureAccess() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['response','at']) && request.resource.data.response in ['yes','no'] && request.resource.data.at==request.time && request.time<get(/databases/$(database)/documents/events/$(id)).data.closesAt && ((request.resource.data.response=='yes' && uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids) || (request.resource.data.response=='no' && !(uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids)));
+    allow create, update: if featureAccess() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['response','at','days']) && request.resource.data.response in ['yes','no'] && (!('days' in request.resource.data) || (request.resource.data.days is list && request.resource.data.days.size()<=31 && request.resource.data.days.toSet().size()==request.resource.data.days.size() && ((request.resource.data.response=='no' && request.resource.data.days.size()==0) || (request.resource.data.response=='yes' && request.resource.data.days.size()>=1)))) && request.resource.data.at==request.time && request.time<get(/databases/$(database)/documents/events/$(id)).data.closesAt && ((request.resource.data.response=='yes' && uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids) || (request.resource.data.response=='no' && !(uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids)));
     allow delete: if admin();
    }
   }
