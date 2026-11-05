@@ -76,14 +76,17 @@ service cloud.firestore {
     allow get: if featureAccess() && (request.auth.uid==readerId || admin());
     allow list: if admin();
     allow create, update: if featureAccess() && request.auth.uid==readerId && request.resource.data.keys().hasOnly(['version','at']) && request.resource.data.version is int && request.resource.data.version>=1 && request.resource.data.version<=get(/databases/$(database)/documents/events/$(id)).data.instructionsVersion && request.resource.data.at==request.time;
+    allow delete: if admin();
    }
    match /instructionHistory/{versionId} {
     allow read: if admin();
     allow create: if admin() && request.resource.data.keys().hasOnly(['security','equipment','version','editedAt','editorId']) && text(request.resource.data.security,3000) && text(request.resource.data.equipment,3000) && request.resource.data.version is int && request.resource.data.editorId==request.auth.uid && request.resource.data.editedAt is timestamp;
+    allow delete: if admin();
    }
    match /rsvps/{uid} {
     allow read: if featureAccess();
     allow create, update: if featureAccess() && uid==request.auth.uid && request.resource.data.keys().hasOnly(['response','at']) && request.resource.data.response in ['yes','no'] && request.resource.data.at==request.time && request.time<get(/databases/$(database)/documents/events/$(id)).data.closesAt && ((request.resource.data.response=='yes' && uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids) || (request.resource.data.response=='no' && !(uid in getAfter(/databases/$(database)/documents/events/$(id)).data.yesUids)));
+    allow delete: if admin();
    }
   }
   match /conversations/{id} {

@@ -64,3 +64,8 @@ nav button.gib-has-unread::after,.conversation-item.gib-has-unread::after{conten
 nav button.gib-has-unread::after,.conversation-item.gib-has-unread::after{background:#ff2020!important;box-shadow:none!important}
 
 .gib-event-practical{margin:10px 0;padding:10px;border:1px solid var(--border,#777);border-radius:8px}.gib-event-practical p{margin:7px 0}.gib-instruction{white-space:pre-wrap;overflow-wrap:anywhere}.gib-event-practical .button{display:inline-block;margin-left:8px;padding:5px 12px}
+
+/* Agenda: compact delete control for authorized managers */
+.gib-event-tile{position:relative;padding-right:2.5rem}
+.gib-event-delete{position:absolute;top:.55rem;right:.55rem;width:1.65rem;height:1.65rem;min-height:0;padding:0;display:grid;place-items:center;border:1px solid #bd3535;border-radius:5px;background:transparent;color:#df4545;font-size:1.35rem;line-height:1;cursor:pointer}
+.gib-event-delete:hover,.gib-event-delete:focus-visible{background:#bd353522;outline:2px solid #df4545;outline-offset:1px}

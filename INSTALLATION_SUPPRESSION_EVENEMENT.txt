@@ -1,0 +1,11 @@
+G.I.B. CONNECT — Correction agenda : suppression d’un événement
+
+1. Sauvegarder le dépôt GitHub actuel.
+2. Décompresser ce ZIP complet et téléverser son contenu à la racine du dépôt GitHub (ne pas téléverser le ZIP).
+3. Dans Firebase Console > Firestore Database > Règles, remplacer les règles par le contenu de firestore.rules et publier.
+4. Attendre le déploiement GitHub Pages puis actualiser l’application.
+5. Dans Agenda, sur un compte administrateur/modérateur autorisé, vérifier la croix X, l’annulation, puis la suppression d’un événement de test.
+6. Vérifier sur un second compte que l’événement et ses indicateurs disparaissent.
+
+Attention : la suppression est définitive. Ne pas tester sur un événement réel à conserver.
+Les sous-collections de réponses, lectures et historique sont nettoyées avant la suppression de l’événement. Une interruption réseau pendant le nettoyage peut nécessiter une nouvelle tentative.
