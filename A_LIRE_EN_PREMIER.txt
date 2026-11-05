@@ -1,0 +1,13 @@
+G.I.B. CONNECT V0.9.21.9.3 — DOSSIER ASSAINI
+
+SOURCE UNIQUE DES REGLES : firestore.rules
+Ne publiez aucun ancien fichier REGLES_FIREBASE.txt ou Texte colle.
+
+1. Dans Firebase Console, sélectionnez le projet gib-connect, Firestore Database, base (default), onglet Règles.
+2. Remplacez TOUT le contenu par firestore.rules, cliquez Publier.
+3. Confirmez dans la version PUBLIÉE que « match /boutiques/{id} » est présent et contient « allow read: if signed(); ».
+4. Déployez ensuite sur GitHub les fichiers de l'application (les fichiers .txt ne sont pas nécessaires au site).
+5. Reconnectez-vous et vérifiez les boutiques, un message normal, une réponse ciblée, un épinglage et l'agenda.
+
+Cette archive corrige la confusion des fichiers de règles et améliore le diagnostic en cas de refus. Elle ne peut pas certifier le résultat sur la base Firebase distante.
+La tâche GitHub Actions des relances nécessite le secret FIREBASE_SERVICE_ACCOUNT.
