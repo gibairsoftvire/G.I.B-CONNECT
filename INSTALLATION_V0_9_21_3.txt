@@ -1,0 +1,11 @@
+G.I.B. CONNECT V0.9.21.3 — Suppression et agenda sur plusieurs jours
+
+1. Sauvegarder la version précédente.
+2. Envoyer TOUS les fichiers et dossiers de cette archive à la racine du dépôt GitHub Pages (pas le ZIP lui-même).
+3. Dans Firebase Console > Firestore Database > Règles, sauvegarder les règles actuelles, puis remplacer leur contenu par firestore.rules et cliquer Publier. IMPORTANT : GitHub ne publie pas les règles Firebase.
+4. Recharger G.I.B. CONNECT (Ctrl+F5 ou fermeture puis réouverture de la PWA).
+5. Tester avec un compte modérateur autorisé : créer un événement d’un jour, un événement sur plusieurs jours, puis supprimer un événement de test via la croix en haut à droite.
+6. Tester la visibilité avec un compte membre.
+
+Correction : suppression des sous-documents RSVP / lectures / historique autorisée aux admins et modérateurs dans les règles incluses. Les anciens événements restent compatibles.
+Attention : aucune vérification sur le Firebase en production n’a été effectuée.
