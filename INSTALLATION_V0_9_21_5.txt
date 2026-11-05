@@ -1,0 +1,6 @@
+G.I.B. CONNECT V0.9.21.5 — types multiples et terrain facultatif
+
+1. Mettre en ligne tous les fichiers de ce ZIP sur GitHub Pages.
+2. Dans Firebase Console > Firestore Database > Règles, remplacer les règles par firestore.rules et PUBLIER.
+3. Vérifier : événement Partie + Réunion, événement sans terrain, ancien événement, accès modérateur, suppression.
+Les règles précédentes ne permettent PAS les nouveaux champs types ni le terrain other.
