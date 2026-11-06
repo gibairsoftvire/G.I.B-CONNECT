@@ -1,38 +1,20 @@
+name: GIB - Synchronisation cotisations HelloAsso
 
-name: GIB - Test connexion HelloAsso Firebase
-
-on:
+"on":
   workflow_dispatch:
+  schedule:
+    - cron: '17 7 * * *'
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
-  test-connexion:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
+  synchronisation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - name: Vérifier la configuration Google Cloud
-        env:
-          PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
-        run: |
-          if [ -z "$PROVIDER" ] || [ -z "$SERVICE_ACCOUNT" ]; then
-            echo "::error::Variables Google Cloud manquantes."
-            exit 1
-          fi
-          echo "Configuration Google Cloud présente."
-
-      - name: Diagnostiquer l'identité GitHub
-        shell: bash
-        run: |
-          echo "Dépôt : $GITHUB_REPOSITORY"
-          echo "Branche : $GITHUB_REF"
-          echo "Diagnostic GitHub terminé."
-
-      - name: Authentification sécurisée Google Cloud
+      - name: Authentification Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
         with:
@@ -40,138 +22,88 @@ jobs:
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
 
-      - name: Vérifier la connexion Google Cloud
-        env:
-          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
-        run: |
-          if [ -z "$ACCESS_TOKEN" ]; then
-            echo "::error::Jeton Google Cloud absent."
-            exit 1
-          fi
-          echo "Connexion Google Cloud réussie."
-
-      - name: Vérifier les identifiants HelloAsso
-        env:
-          CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.HELLOASSO_CLIENT_SECRET }}
-        run: |
-          if [ -z "$CLIENT_ID" ] || [ -z "$CLIENT_SECRET" ]; then
-            echo "::error::Identifiants HelloAsso manquants."
-            exit 1
-          fi
-          echo "Identifiants HelloAsso présents."
-
-      - name: Tester l'authentification HelloAsso
+      - name: Récupérer les cotisations et préparer un rapport confidentiel
         shell: bash
         env:
           CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.HELLOASSO_CLIENT_SECRET }}
         run: |
           set -euo pipefail
-          RESPONSE_FILE=$(mktemp)
-          trap 'rm -f "$RESPONSE_FILE"' EXIT
-
-          HTTP_CODE=$(curl --silent --show-error \
-            --connect-timeout 10 --max-time 30 \
-            --output "$RESPONSE_FILE" \
-            --write-out '%{http_code}' \
-            --request POST \
-            'https://api.helloasso.com/oauth2/token' \
-            --header 'Content-Type: application/x-www-form-urlencoded' \
-            --data-urlencode 'grant_type=client_credentials' \
-            --data-urlencode "client_id=$CLIENT_ID" \
-            --data-urlencode "client_secret=$CLIENT_SECRET")
-
-          echo "Code HTTP HelloAsso : $HTTP_CODE"
-
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "::error::Authentification HelloAsso refusée (HTTP $HTTP_CODE)."
-            exit 1
-          fi
-
-          if ! jq -e '.access_token | type == "string" and length > 0' \
-            "$RESPONSE_FILE" >/dev/null; then
-            echo "::error::Aucun jeton HelloAsso valide reçu."
-            exit 1
-          fi
-
-          echo "Authentification HelloAsso réussie."
-          echo "Jeton reçu et vérifié sans être affiché."
-          echo "Aucune donnée Firebase modifiée."
-
-      - name: Vérifier les campagnes et commandes HelloAsso (lecture seule)
-        shell: bash
-        env:
-          CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.HELLOASSO_CLIENT_SECRET }}
-        run: |
-          set -euo pipefail
-          ORG="g-i-b-groupe-d-intervention-du-bocage"
-          FORM="cotisation-g-i-b-airsoft"
-          TMP=$(mktemp -d)
-          trap 'rm -rf "$TMP"' EXIT
-
-          CODE=$(curl --silent --show-error --retry 2 --connect-timeout 10 --max-time 30 \
-            -o "$TMP/token.json" -w '%{http_code}' \
+          umask 077
+          mkdir -p rapport
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          test -n "$CLIENT_ID" && test -n "$CLIENT_SECRET"
+          code=$(curl -sS --retry 2 --connect-timeout 10 --max-time 40 -o "$tmp/auth.json" -w '%{http_code}' \
             -X POST 'https://api.helloasso.com/oauth2/token' \
             -H 'Content-Type: application/x-www-form-urlencoded' \
             --data-urlencode 'grant_type=client_credentials' \
             --data-urlencode "client_id=$CLIENT_ID" \
             --data-urlencode "client_secret=$CLIENT_SECRET")
-          if [ "$CODE" != 200 ]; then
-            echo "::error::Jeton HelloAsso indisponible (HTTP $CODE)."
+          if [ "$code" != 200 ]; then echo "::error::Authentification HelloAsso HTTP $code"; exit 1; fi
+          token=$(jq -er '.access_token | select(type == "string" and length > 0)' "$tmp/auth.json")
+          org='g-i-b-groupe-d-intervention-du-bocage'
+          form='cotisation-g-i-b-airsoft'
+          : > "$tmp/orders.jsonl"
+          page=1
+          while [ "$page" -le 100 ]; do
+            url="https://api.helloasso.com/v5/organizations/$org/forms/Membership/$form/orders?pageIndex=$page&pageSize=100"
+            code=$(curl -sS --retry 2 --connect-timeout 10 --max-time 40 \
+              -o "$tmp/page.json" -w '%{http_code}' \
+              -H "Authorization: Bearer $token" -H 'Accept: application/json' "$url")
+            if [ "$code" != 200 ]; then echo "::error::Lecture commandes HTTP $code"; exit 1; fi
+            jq -e '.data | type == "array"' "$tmp/page.json" >/dev/null
+            jq -c '.data[]' "$tmp/page.json" >> "$tmp/orders.jsonl"
+            n=$(jq '.data | length' "$tmp/page.json")
+            if [ "$n" -lt 100 ]; then break; fi
+            page=$((page+1))
+          done
+          if [ "$page" -gt 100 ]; then echo '::error::Pagination incomplète'; exit 1; fi
+          # Rapport strictement agrégé : aucune identité, aucun ID, aucune date individuelle.
+          jq -s '{
+            commandes: length,
+            articles: ([.[] | (.items // [] | length)] | add // 0),
+            references_paiements: ([.[] | (.payments // [] | length)] | add // 0),
+            etats: ([.[] | .payments[]? | .state // "Non renseigne"] | group_by(.) | map({etat: .[0], nombre: length})),
+            versements: ([.[] | .payments[]? | .cashOutState // "Non renseigne"] | group_by(.) | map({etat: .[0], nombre: length})),
+            numeros_echeances: ([.[] | .payments[]? | .installmentNumber // "Non renseigne"] | group_by(.) | map({numero: .[0], nombre: length}))
+          }' "$tmp/orders.jsonl" > rapport/synthese-cotisations.json
+          echo 'Lecture HelloAsso terminée.'
+          jq '{commandes, articles, references_paiements, etats, versements}' rapport/synthese-cotisations.json
+          echo 'Rapport agrégé préparé. Aucune restriction de compte.'
+
+      - name: Publier le tableau de bord HelloAsso dans Firebase
+        shell: bash
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          test -n "$GOOGLE_ACCESS_TOKEN"
+          # Uniquement des comptes globaux, jamais les identités ou paiements individuels.
+          jq -n --slurpfile report rapport/synthese-cotisations.json '{fields: {
+            commandes: {integerValue: ($report[0].commandes|tostring)},
+            articles: {integerValue: ($report[0].articles|tostring)},
+            references_paiements: {integerValue: ($report[0].references_paiements|tostring)},
+            etatsJson: {stringValue: ($report[0].etats|tojson)},
+            versementsJson: {stringValue: ($report[0].versements|tojson)},
+            misAJour: {timestampValue: (now|todateiso8601)}
+          }}' > rapport/firebase-payload.json
+          code=$(curl -sS --retry 2 --connect-timeout 10 --max-time 40 \
+            -o /tmp/gib-firestore-response -w '%{http_code}' -X PATCH \
+            -H "Authorization: Bearer $GOOGLE_ACCESS_TOKEN" \
+            -H 'Content-Type: application/json' \
+            --data-binary @rapport/firebase-payload.json \
+            'https://firestore.googleapis.com/v1/projects/gib-connect/databases/(default)/documents/helloassoDiagnostics/current')
+          if [ "$code" != 200 ]; then
+            echo "::error::Écriture du rapport agrégé dans Firebase : HTTP $code"
             exit 1
           fi
-          TOKEN=$(jq -er '.access_token' "$TMP/token.json")
-          echo "Jeton HelloAsso reçu (non affiché)."
+          echo 'Tableau de bord HelloAsso actualisé dans Firebase.'
+          echo 'Aucune cotisation individuelle, aucun compte et aucune restriction modifiés.' 
 
-          api_get() {
-            local url="$1" dest="$2" status
-            status=$(curl --silent --show-error --retry 2 --connect-timeout 10 --max-time 45 \
-              -o "$dest" -w '%{http_code}' \
-              -H "Authorization: Bearer $TOKEN" -H 'Accept: application/json' "$url")
-            if [ "$status" != 200 ]; then
-              echo "::error::Lecture HelloAsso refusée (HTTP $status). Vérifier les droits API AccessTransactions si commandes."
-              exit 1
-            fi
-            jq -e '.data | type == "array"' "$dest" >/dev/null || {
-              echo '::error::Format de réponse inattendu.'; exit 1;
-            }
-          }
-
-          api_get "https://api.helloasso.com/v5/organizations/$ORG/forms?pageSize=100" "$TMP/forms.json"
-          jq -e --arg slug "$FORM" '.data | any(.formSlug == $slug and .formType == "Membership")' "$TMP/forms.json" >/dev/null || {
-            echo '::error::Campagne d’adhésion introuvable dans la première page de formulaires.'
-            exit 1
-          }
-          echo "Campagne d’adhésion G.I.B. identifiée."
-          echo "Formulaires visibles sur cette page : $(jq '.data | length' "$TMP/forms.json")"
-
-          # Compte les commandes sans afficher aucune identité ni donnée bancaire.
-          cursor=''
-          count=0
-          pages=0
-          while :; do
-            pages=$((pages + 1))
-            if [ "$pages" -gt 100 ]; then
-              echo '::error::Limite de pagination atteinte ; vérification manuelle nécessaire.'
-              exit 1
-            fi
-            url="https://api.helloasso.com/v5/organizations/$ORG/forms/Membership/$FORM/orders?pageSize=100"
-            if [ -n "$cursor" ]; then
-              encoded=$(jq -rn --arg v "$cursor" '$v|@uri')
-              url="$url&continuationToken=$encoded"
-            fi
-            api_get "$url" "$TMP/orders.json"
-            n=$(jq '.data | length' "$TMP/orders.json")
-            count=$((count + n))
-            if [ "$n" -eq 0 ]; then break; fi
-            next=$(jq -r '.pagination.continuationToken // empty' "$TMP/orders.json")
-            if [ -z "$next" ]; then break; fi
-            if [ "$next" = "$cursor" ]; then
-              echo '::error::Pagination répétée ; arrêt de sécurité.'; exit 1
-            fi
-            cursor="$next"
-          done
-          echo "Commandes d’adhésion retrouvées : $count"
-          echo 'Vérification terminée : aucune donnée personnelle affichée ; aucune écriture Firebase.'
+      - name: Conserver le rapport technique
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-cotisations-helloasso
+          path: rapport/synthese-cotisations.json
+          retention-days: 7

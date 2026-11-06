@@ -1,0 +1,5 @@
+1. Remplacer les fichiers du dépôt GitHub par ceux du ZIP (sans supprimer les autres).
+2. Publier firestore.rules dans Firebase Console > Firestore Database > Rules.
+3. Dans GitHub Actions lancer GIB - Synchronisation cotisations HelloAsso.
+4. Ouvrir G.I.B. CONNECT avec le compte Commandant, rubrique Cotisations.
+IMPORTANT : tableau de bord agrégé uniquement ; pas de rapprochement nominatif ni de restrictions automatiques.

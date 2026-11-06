@@ -152,6 +152,11 @@ service cloud.firestore {
    allow create, update: if admin() && validBoutique();
    allow delete: if admin();
   }
+  // Rapport agrégé publié exclusivement par le compte de service Google Cloud.
+  match /helloassoDiagnostics/{id} {
+   allow get: if owner() && id == 'current';
+   allow list, create, update, delete: if false;
+  }
   match /{document=**} {allow read, write: if false;}
  }
 }
