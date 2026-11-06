@@ -1,0 +1,12 @@
+G.I.B. CONNECT V0.9.21.13 — FICHES ADMINISTRATIVES / PRÉPARATION HELLOASSO
+
+1. Sauvegarder la version actuellement en ligne.
+2. Publier le contenu de cette archive sur GitHub Pages.
+3. Copier TOUT le fichier REGLES_FIRESTORE_A_COPIER_DANS_FIREBASE.txt dans Firebase > Firestore Database > Règles, puis Publier.
+4. Tester avec un compte modérateur : Membres > Modifier le profil. Nom, prénom et surnom sont obligatoires.
+5. Tester avec un compte membre : aucun accès aux identités civiles, même via requête Firestore directe.
+
+Les données civiles sont enregistrées dans memberCivil/{uid}, séparées de profiles/{uid}.
+La connexion HelloAsso n’est PAS encore activée. Aucune donnée de paiement ou de billet n’est synchronisée.
+Ne jamais ajouter de nom/prénom à profiles/{uid}, accessible aux membres.
+Attention : les noms/prénoms sont des données personnelles. Réserver les accès aux personnes habilitées.

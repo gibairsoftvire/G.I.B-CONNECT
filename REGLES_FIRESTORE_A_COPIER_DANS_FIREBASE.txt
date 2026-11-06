@@ -39,6 +39,13 @@ service cloud.firestore {
    allow create, update: if valid() && admin() && (request.resource.data.role=='member' || owner()) && (request.method=='create' || resource.data.role=='member' || owner());
    allow delete: if admin() && (resource.data.role=='member' || owner());
   }
+  // Identité civile séparée : aucune lecture par les membres, même pour leur propre fiche.
+  match /memberCivil/{uid} {
+   function validCivil(){return request.resource.data.keys().hasOnly(['lastName','firstName','updatedAt','updatedBy']) && request.resource.data.keys().hasAll(['lastName','firstName','updatedAt','updatedBy']) && request.resource.data.lastName is string && request.resource.data.lastName.size()>0 && request.resource.data.lastName.size()<=100 && request.resource.data.firstName is string && request.resource.data.firstName.size()>0 && request.resource.data.firstName.size()<=100 && request.resource.data.updatedBy==request.auth.uid && request.resource.data.updatedAt==request.time;}
+   allow get, list: if admin();
+   allow create, update: if admin() && exists(/databases/$(database)/documents/profiles/$(uid)) && validCivil();
+   allow delete: if false;
+  }
   match /profiles/{uid} {
    function valid(){return request.resource.data.keys().hasOnly(['nickname','email','grade','speciality']) && text(request.resource.data.nickname,40) && (!('email' in request.resource.data) || text(request.resource.data.email,254)) && text(request.resource.data.grade,70) && request.resource.data.speciality is list && request.resource.data.speciality.size()<=20;}
    allow read: if enabled();
