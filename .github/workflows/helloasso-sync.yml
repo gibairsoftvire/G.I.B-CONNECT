@@ -1,4 +1,4 @@
-name: GIB - Diagnostic lecture HelloAsso
+name: GIB - Lecture cotisations HelloAsso
 
 on:
   workflow_dispatch:
@@ -8,65 +8,69 @@ permissions:
   id-token: write
 
 jobs:
-  test-connexion:
+  lecture-cotisations:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Authentification sécurisée Google Cloud
-        id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
 
-      - name: Vérifier la connexion Google Cloud
-        env:
-          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
-        shell: bash
-        run: |
-          test -n "$ACCESS_TOKEN" || { echo 'Jeton Google Cloud absent'; exit 1; }
-          echo 'Connexion Google Cloud OK'
-
-      - name: Authentifier HelloAsso avec curl et vérifier les accès
+      - name: Lire les commandes et vérifier la structure des paiements
         shell: bash
         env:
           CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.HELLOASSO_CLIENT_SECRET }}
         run: |
           set -euo pipefail
-          test -n "$CLIENT_ID" && test -n "$CLIENT_SECRET" || { echo 'Identifiants HelloAsso absents'; exit 1; }
-          response=$(mktemp)
-          trap 'rm -f "$response"' EXIT
-          code=$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
-            --output "$response" --write-out '%{http_code}' \
-            --request POST 'https://api.helloasso.com/oauth2/token' \
-            --header 'Content-Type: application/x-www-form-urlencoded' \
+          umask 077
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          test -n "$CLIENT_ID" && test -n "$CLIENT_SECRET"
+          auth_code=$(curl --fail-with-body --silent --show-error --retry 2 \
+            --connect-timeout 10 --max-time 40 -o "$tmp/auth.json" -w '%{http_code}' \
+            -X POST 'https://api.helloasso.com/oauth2/token' \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
             --data-urlencode 'grant_type=client_credentials' \
             --data-urlencode "client_id=$CLIENT_ID" \
             --data-urlencode "client_secret=$CLIENT_SECRET")
-          echo "Authentification HelloAsso : HTTP $code"
-          if [ "$code" != 200 ]; then
-            echo 'Authentification refusée. Ne pas changer les clés automatiquement.'
-            exit 1
-          fi
-          token=$(jq -er '.access_token | select(type == "string" and length > 0)' "$response") || {
-            echo 'Jeton HelloAsso absent'; exit 1;
-          }
-          echo 'Jeton HelloAsso obtenu.'
+          test "$auth_code" = 200
+          token=$(jq -er '.access_token | select(type == "string" and length > 0)' "$tmp/auth.json")
+          echo 'Authentification HelloAsso : OK'
           org='g-i-b-groupe-d-intervention-du-bocage'
           form='cotisation-g-i-b-airsoft'
-          check_endpoint() {
-            local label="$1" url="$2" http
-            http=$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
-              --output /dev/null --write-out '%{http_code}' \
-              --header "Authorization: Bearer $token" \
-              --header 'Accept: application/json' "$url") || {
-              echo "$label : erreur réseau"; return 0;
+          total_orders=0
+          total_items=0
+          page=1
+          while [ "$page" -le 100 ]; do
+            url="https://api.helloasso.com/v5/organizations/$org/forms/Membership/$form/orders?pageIndex=$page&pageSize=100"
+            code=$(curl --silent --show-error --retry 2 --connect-timeout 10 --max-time 40 \
+              -o "$tmp/page.json" -w '%{http_code}' \
+              -H "Authorization: Bearer $token" -H 'Accept: application/json' "$url")
+            echo "Page $page : HTTP $code"
+            if [ "$code" != 200 ]; then
+              echo '::error::Lecture des commandes refusée ou indisponible.'
+              exit 1
+            fi
+            jq -e '.data | type == "array"' "$tmp/page.json" >/dev/null || {
+              echo '::error::Structure de réponse inattendue.'; exit 1;
             }
-            echo "$label : HTTP $http"
-          }
-          check_endpoint 'Association' "https://api.helloasso.com/v5/organizations/$org"
-          check_endpoint 'Formulaires' "https://api.helloasso.com/v5/organizations/$org/forms?pageIndex=1&pageSize=1"
-          check_endpoint 'Commandes cotisations' "https://api.helloasso.com/v5/organizations/$org/forms/Membership/$form/orders?pageIndex=1&pageSize=1"
-          echo 'Diagnostic terminé : aucune écriture Firebase, aucune donnée privée affichée.'
+            n=$(jq '.data | length' "$tmp/page.json")
+            items=$(jq '[.data[] | (.items // [] | length)] | add // 0' "$tmp/page.json")
+            total_orders=$((total_orders+n))
+            total_items=$((total_items+items))
+            echo "Commandes sur la page : $n"
+            # Pagination par index : s'arrête à une page incomplète.
+            if [ "$n" -lt 100 ]; then break; fi
+            page=$((page+1))
+          done
+          if [ "$page" -gt 100 ]; then
+            echo '::error::Limite de pagination atteinte; total incomplet.'; exit 1
+          fi
+          echo "Total commandes récupérées : $total_orders"
+          echo "Total articles rattachés aux commandes : $total_items"
+          echo 'Lecture seule terminée. Aucun paiement déclaré encaissé par déduction.'
+          echo 'Aucune donnée personnelle affichée. Aucune écriture Firebase.'
