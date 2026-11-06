@@ -54,6 +54,11 @@ service cloud.firestore {
    allow create, update: if admin() && request.resource.data.keys().hasOnly(['name','lat','lon','address','access']) && text(request.resource.data.name,80) && text(request.resource.data.address,200) && text(request.resource.data.access,600) && ((request.resource.data.lat=='' && request.resource.data.lon=='') || (request.resource.data.lat is number && request.resource.data.lon is number && request.resource.data.lat>=-90 && request.resource.data.lat<=90 && request.resource.data.lon>=-180 && request.resource.data.lon<=180));
    allow delete: if admin();
   }
+  match /helloassoMemberStatus/{uid} {
+   allow get: if enabled() && (admin() || request.auth.uid == uid);
+   allow list: if admin();
+   allow write: if false;
+  }
   match /memberships/{uid} {
    allow get: if enabled() && (admin() || uid==request.auth.uid);
    allow list: if admin();

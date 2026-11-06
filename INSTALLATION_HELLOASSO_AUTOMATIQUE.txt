@@ -1,0 +1,11 @@
+G.I.B. CONNECT — liaison HelloAsso automatique
+
+Publier les fichiers modifiés app.js, helloasso_individual_sync.py et FIREBASE_REGLES_A_PUBLIER.rules (dans Firebase > Firestore > Règles). Le workflow helloasso-sync.yml existant reste inchangé.
+
+Après publication, lancer une fois Actions > Synchronisation cotisations HelloAsso.
+
+NITRO et WAR : correspondances vérifiées préconfigurées. BOBY : association automatique uniquement si HelloAsso transmet une adresse email de BENEFICIAIRE qui correspond exactement et uniquement à un profil Firebase. Si le champ bénéficiaire est absent ou ambigu, aucune association automatique (validation manuelle nécessaire).
+
+L’onglet Cotisations affiche les références de commandes et le décompte des statuts. Aucun statut ne prouve seul qu’une mensualité est encaissée. Aucune restriction ni alerte automatique activée.
+
+Ne pas remplacer les règles Firebase sans les comparer aux règles actuellement publiées.
