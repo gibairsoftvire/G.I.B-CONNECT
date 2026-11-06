@@ -19,30 +19,20 @@ jobs:
           PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
         run: |
-          test -n "$PROVIDER" || exit 1
-          test -n "$SERVICE_ACCOUNT" || exit 1
+          if [ -z "$PROVIDER" ] || [ -z "$SERVICE_ACCOUNT" ]; then
+            echo "::error::Variables Google Cloud manquantes."
+            exit 1
+          fi
           echo "Variables Google Cloud présentes."
 
       - name: Diagnostiquer l'identité GitHub
         shell: bash
         run: |
-          set -euo pipefail
-          RESPONSE=$(curl --fail --silent --show-error \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=diagnostic-gib")
-
-          TOKEN=$(echo "$RESPONSE" | jq -r '.value')
-          test -n "$TOKEN" && test "$TOKEN" != "null"
-
-          PAYLOAD=$(echo "$TOKEN" | cut -d. -f2)
-          PAYLOAD="${PAYLOAD//-/+}"
-          PAYLOAD="${PAYLOAD//_/\/}"
-
-          echo "Identité présentée par GitHub :"
-          printf '%s' "$PAYLOAD" | base64 -d 2>/dev/null \
-            | jq '{sub, repository, repository_owner, ref, aud}'
-
-          echo "Diagnostic terminé. Aucun jeton affiché."
+          echo "Dépôt : $GITHUB_REPOSITORY"
+          echo "Branche : $GITHUB_REF"
+          echo "Acteur : $GITHUB_ACTOR"
+          echo "Diagnostic GitHub terminé."
+          echo "Aucun jeton affiché."
 
       - name: Authentification sécurisée Google Cloud
         id: auth
@@ -56,6 +46,9 @@ jobs:
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: |
-          test -n "$ACCESS_TOKEN" || exit 1
+          if [ -z "$ACCESS_TOKEN" ]; then
+            echo "::error::Jeton Google Cloud absent."
+            exit 1
+          fi
           echo "Connexion Google Cloud réussie."
           echo "Aucune donnée Firebase modifiée."
