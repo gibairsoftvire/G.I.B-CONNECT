@@ -23,6 +23,27 @@ jobs:
           test -n "$SERVICE_ACCOUNT" || exit 1
           echo "Variables Google Cloud présentes."
 
+      - name: Diagnostiquer l'identité GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESPONSE=$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=diagnostic-gib")
+
+          TOKEN=$(echo "$RESPONSE" | jq -r '.value')
+          test -n "$TOKEN" && test "$TOKEN" != "null"
+
+          PAYLOAD=$(echo "$TOKEN" | cut -d. -f2)
+          PAYLOAD="${PAYLOAD//-/+}"
+          PAYLOAD="${PAYLOAD//_/\/}"
+
+          echo "Identité présentée par GitHub :"
+          printf '%s' "$PAYLOAD" | base64 -d 2>/dev/null \
+            | jq '{sub, repository, repository_owner, ref, aud}'
+
+          echo "Diagnostic terminé. Aucun jeton affiché."
+
       - name: Authentification sécurisée Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
