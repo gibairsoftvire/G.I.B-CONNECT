@@ -65,9 +65,17 @@ jobs:
           echo '--- Numeros echeance par etat (comptages) ---'
           jq -sr 'group_by([(.installmentNumber // -1), (.state // "absent")])[] | "echeance=" + (.[0].installmentNumber // "absent" | tostring) + ", state=" + (.[0].state // "absent" | tostring) + ", nombre=" + (length | tostring)' "$tmp/all.jsonl"
           echo '--- Repartition des dates par mois et etat (comptages) ---'
-          jq -sr 'group_by([((.[0].date // "") | tostring), (.state // "absent")]) | .[] | empty' "$tmp/all.jsonl" >/dev/null
-          jq -sr 'group_by([((.date // "absent" | tostring)[0:7]), (.state // "absent")])[] | "mois=" + ((.[0].date // "absent" | tostring)[0:7]) + ", state=" + (.[0].state // "absent" | tostring) + ", nombre=" + (length | tostring)' "$tmp/all.jsonl"
-          echo '--- Format des dates et types de moyen de paiement ---'
-          jq -sr '"references=" + (length | tostring) + ", dates_non_vides=" + ([.[] | select((.date // "") != "")] | length | tostring)' "$tmp/all.jsonl"
+          jq -sr '
+            def mois:
+              if (.date | type) == "string" then
+                if (.date | test("^[0-9]{4}-[0-9]{2}")) then .date[0:7] else "date_texte_non_iso" end
+              elif (.date | type) == "number" then "date_numerique"
+              elif .date == null then "date_absente"
+              else "date_autre_format" end;
+            group_by([mois, (.state // "absent")])[] |
+            "mois=" + (.[0] | mois) + ", state=" + (.[0].state // "absent" | tostring) + ", nombre=" + (length | tostring)
+          ' "$tmp/all.jsonl"
+          echo '--- Format des dates ---'
+          jq -sr 'group_by(.date | type)[] | "type=" + (.[0].date | type) + ", nombre=" + (length | tostring)' "$tmp/all.jsonl"
           echo 'Aucune date ne prouve a elle seule une date d exigibilite ou un encaissement definitif.'
           echo 'Aucune donnee personnelle affichee. Aucune ecriture Firebase. Aucune restriction.'
