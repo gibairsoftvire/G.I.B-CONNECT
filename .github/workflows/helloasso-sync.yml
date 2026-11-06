@@ -70,7 +70,36 @@ jobs:
           }' "$tmp/orders.jsonl" > rapport/synthese-cotisations.json
           echo 'Lecture HelloAsso terminée.'
           jq '{commandes, articles, references_paiements, etats, versements}' rapport/synthese-cotisations.json
-          echo 'Aucune écriture Firebase, aucune restriction de compte.'
+          echo 'Rapport agrégé préparé. Aucune restriction de compte.'
+
+      - name: Publier le tableau de bord HelloAsso dans Firebase
+        shell: bash
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          test -n "$GOOGLE_ACCESS_TOKEN"
+          # Uniquement des comptes globaux, jamais les identités ou paiements individuels.
+          jq -n --slurpfile report rapport/synthese-cotisations.json '{fields: {
+            commandes: {integerValue: ($report[0].commandes|tostring)},
+            articles: {integerValue: ($report[0].articles|tostring)},
+            references_paiements: {integerValue: ($report[0].references_paiements|tostring)},
+            etatsJson: {stringValue: ($report[0].etats|tojson)},
+            versementsJson: {stringValue: ($report[0].versements|tojson)},
+            misAJour: {timestampValue: (now|todateiso8601)}
+          }}' > rapport/firebase-payload.json
+          code=$(curl -sS --retry 2 --connect-timeout 10 --max-time 40 \
+            -o /tmp/gib-firestore-response -w '%{http_code}' -X PATCH \
+            -H "Authorization: Bearer $GOOGLE_ACCESS_TOKEN" \
+            -H 'Content-Type: application/json' \
+            --data-binary @rapport/firebase-payload.json \
+            'https://firestore.googleapis.com/v1/projects/gib-connect/databases/(default)/documents/helloassoDiagnostics/current')
+          if [ "$code" != 200 ]; then
+            echo "::error::Écriture du rapport agrégé dans Firebase : HTTP $code"
+            exit 1
+          fi
+          echo 'Tableau de bord HelloAsso actualisé dans Firebase.'
+          echo 'Aucune cotisation individuelle, aucun compte et aucune restriction modifiés.' 
 
       - name: Conserver le rapport technique
         uses: actions/upload-artifact@v4
