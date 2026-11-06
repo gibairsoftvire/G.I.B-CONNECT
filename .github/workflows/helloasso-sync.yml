@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   test-connexion:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:
@@ -30,7 +30,6 @@ jobs:
         run: |
           echo "Dépôt : $GITHUB_REPOSITORY"
           echo "Branche : $GITHUB_REF"
-          echo "Diagnostic GitHub terminé."
 
       - name: Authentification sécurisée Google Cloud
         id: auth
@@ -61,40 +60,139 @@ jobs:
           fi
           echo "Identifiants HelloAsso présents."
 
-      - name: Tester l'authentification HelloAsso
+      - name: Lire les adhésions HelloAsso
         shell: bash
         env:
           CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.HELLOASSO_CLIENT_SECRET }}
+          ORG_SLUG: g-i-b-groupe-d-intervention-du-bocage
+          FORM_SLUG: cotisation-g-i-b-airsoft
         run: |
           set -euo pipefail
-          RESPONSE_FILE=$(mktemp)
-          trap 'rm -f "$RESPONSE_FILE"' EXIT
+          python3 - <<'PY'
+          import os
+          import json
+          import urllib.request
+          import urllib.parse
+          import urllib.error
 
-          HTTP_CODE=$(curl --silent --show-error \
-            --connect-timeout 10 --max-time 30 \
-            --output "$RESPONSE_FILE" \
-            --write-out '%{http_code}' \
-            --request POST \
-            'https://api.helloasso.com/oauth2/token' \
-            --header 'Content-Type: application/x-www-form-urlencoded' \
-            --data-urlencode 'grant_type=client_credentials' \
-            --data-urlencode "client_id=$CLIENT_ID" \
-            --data-urlencode "client_secret=$CLIENT_SECRET")
+          base = "https://api.helloasso.com"
+          org = os.environ["ORG_SLUG"]
+          form = os.environ["FORM_SLUG"]
 
-          echo "Code HTTP HelloAsso : $HTTP_CODE"
+          def request_json(url, data=None, headers=None):
+              req = urllib.request.Request(
+                  url, data=data, headers=headers or {}
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      return json.load(r)
+              except urllib.error.HTTPError as e:
+                  raise RuntimeError(
+                      f"HelloAsso HTTP {e.code}"
+                  ) from None
 
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "::error::Authentification HelloAsso refusée (HTTP $HTTP_CODE)."
-            exit 1
-          fi
+          credentials = urllib.parse.urlencode({
+              "grant_type": "client_credentials",
+              "client_id": os.environ["CLIENT_ID"],
+              "client_secret": os.environ["CLIENT_SECRET"]
+          }).encode()
 
-          if ! jq -e '.access_token | type == "string" and length > 0' \
-            "$RESPONSE_FILE" >/dev/null; then
-            echo "::error::Aucun jeton HelloAsso valide reçu."
-            exit 1
-          fi
+          auth = request_json(
+              base + "/oauth2/token",
+              data=credentials,
+              headers={
+                  "Content-Type":
+                  "application/x-www-form-urlencoded"
+              }
+          )
 
-          echo "Authentification HelloAsso réussie."
-          echo "Jeton reçu et vérifié sans être affiché."
-          echo "Aucune donnée Firebase modifiée."
+          token = auth.get("access_token")
+          if not token:
+              raise RuntimeError("Jeton HelloAsso absent")
+
+          print("Authentification HelloAsso réussie.")
+
+          headers = {
+              "Authorization": "Bearer " + token,
+              "Accept": "application/json"
+          }
+
+          def get_pages(path):
+              result = []
+              continuation = None
+              seen = set()
+
+              for page in range(1, 501):
+                  params = {"pageSize": 100}
+                  if continuation:
+                      params["continuationToken"] = continuation
+
+                  url = (
+                      base + path + "?" +
+                      urllib.parse.urlencode(params)
+                  )
+                  response = request_json(url, headers=headers)
+                  data = response.get("data")
+
+                  if not isinstance(data, list):
+                      raise RuntimeError(
+                          "Réponse HelloAsso inattendue"
+                      )
+
+                  if not data:
+                      return result
+
+                  result.extend(data)
+                  pagination = response.get("pagination") or {}
+                  next_token = pagination.get("continuationToken")
+
+                  if not next_token:
+                      return result
+
+                  if next_token in seen:
+                      raise RuntimeError(
+                          "Pagination HelloAsso répétée"
+                      )
+
+                  seen.add(next_token)
+                  continuation = next_token
+
+              raise RuntimeError(
+                  "Limite de pagination atteinte"
+              )
+
+          prefix = "/v5/organizations/" + org
+
+          forms = get_pages(prefix + "/forms")
+          matching = [
+              f for f in forms
+              if f.get("formSlug") == form
+              and f.get("formType") == "Membership"
+          ]
+
+          print("Formulaires trouvés :", len(forms))
+          print("Campagne de cotisation trouvée :", bool(matching))
+
+          if not matching:
+              raise RuntimeError(
+                  "Campagne d'adhésion introuvable"
+              )
+
+          path = (
+              prefix + "/forms/Membership/" +
+              form + "/orders"
+          )
+          orders = get_pages(path)
+
+          print("Commandes d'adhésion :", len(orders))
+
+          item_count = sum(
+              len(o.get("items") or []) for o in orders
+          )
+          print("Articles d'adhésion :", item_count)
+
+          print("Lecture HelloAsso terminée.")
+          print("Aucune donnée personnelle affichée.")
+          print("Aucune modification Firebase.")
+          PY
