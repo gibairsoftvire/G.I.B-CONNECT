@@ -1,0 +1,10 @@
+G.I.B. CONNECT V0.9.21.11 — SURNOMS ATTRIBUES PAR LA MODERATION
+
+1. Publier les fichiers du ZIP sur GitHub Pages.
+2. Copier REGLES_FIRESTORE_A_COPIER_DANS_FIREBASE.txt dans Firebase > Firestore Database > Regles, puis Publier.
+3. Les nouveaux comptes affichent leur adresse e-mail jusqu’a attribution du surnom par un moderateur.
+4. Dans Membres > Modifier le profil, le Commandant ou un moderateur attribue le surnom.
+5. Les membres ne peuvent pas changer leur surnom, meme via une requete directe Firestore.
+6. Les profils existants conservent leur surnom; leur adresse e-mail est ajoutee lors de leur prochaine connexion.
+
+Verification en ligne sur Firebase necessaire apres installation.

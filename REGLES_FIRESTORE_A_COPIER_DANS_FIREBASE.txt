@@ -40,10 +40,10 @@ service cloud.firestore {
    allow delete: if admin() && (resource.data.role=='member' || owner());
   }
   match /profiles/{uid} {
-   function valid(){return request.resource.data.keys().hasOnly(['nickname','grade','speciality']) && text(request.resource.data.nickname,40) && request.resource.data.nickname.size()>0 && text(request.resource.data.grade,70) && request.resource.data.speciality is list && request.resource.data.speciality.size()<=20;}
+   function valid(){return request.resource.data.keys().hasOnly(['nickname','email','grade','speciality']) && text(request.resource.data.nickname,40) && (!('email' in request.resource.data) || text(request.resource.data.email,254)) && text(request.resource.data.grade,70) && request.resource.data.speciality is list && request.resource.data.speciality.size()<=20;}
    allow read: if enabled();
-   allow create: if enabled() && valid() && (admin() || (uid==request.auth.uid && request.resource.data.grade=='' && request.resource.data.speciality.size()==0));
-   allow update: if enabled() && valid() && (admin() || (uid==request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname'])));
+   allow create: if enabled() && valid() && (admin() || (uid==request.auth.uid && request.resource.data.nickname=='' && request.resource.data.email==request.auth.token.email && request.resource.data.grade=='' && request.resource.data.speciality.size()==0));
+   allow update: if enabled() && valid() && (admin() || (uid==request.auth.uid && !('email' in resource.data) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email']) && request.resource.data.email==request.auth.token.email));
   }
   match /settings/{id} {
    allow read: if enabled();
