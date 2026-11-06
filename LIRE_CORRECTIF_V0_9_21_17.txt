@@ -1,0 +1,10 @@
+G.I.B. CONNECT V0.9.21.17 — Audit du dépôt fourni le 06/11/2026
+
+1. Une collection helloassoMemberStatus est consultée par app.js mais aucune règle de lecture ne lui était attribuée. Ajout des droits de lecture limités, sans écriture client.
+2. Le chargement des modules secondaires ne doit pas verrouiller la connexion (comportement conservé).
+3. Les erreurs de lecture de /access/{uid} sont distinguées des erreurs des modules secondaires.
+4. Versions des scripts et du cache renouvelées.
+
+Publier les règles du fichier FIREBASE_REGLES_A_PUBLIER.rules dans Firebase Firestore si les règles actuellement publiées ne comprennent pas helloassoMemberStatus. Les fichiers du site sont dans cette archive complète.
+
+IMPORTANT : le ZIP est vérifié statiquement, mais l'accès réel à votre projet Firebase et les droits du compte ne sont pas testables depuis cette archive. Si la lecture /access/{uid} est refusée, il faut vérifier le document /access correspondant à l'UID authentifié et les règles effectivement déployées ; aucune modification côté navigateur ne peut contourner un refus Firestore.

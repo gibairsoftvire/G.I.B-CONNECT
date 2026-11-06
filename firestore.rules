@@ -153,7 +153,16 @@ service cloud.firestore {
    allow delete: if admin();
   }
   // Rapport agrégé publié exclusivement par le compte de service Google Cloud.
-  match /helloassoDiagnostics/{id} {
+     // Statut de cotisation généré par la synchronisation serveur HelloAsso.
+   // Le compte connecté lit uniquement son statut ; le commandant et les
+   // modérateurs peuvent consulter les statuts pour la gestion des cotisations.
+   match /helloassoMemberStatus/{uid} {
+    allow get: if enabled() && (admin() || request.auth.uid == uid);
+    allow list: if admin();
+    allow create, update, delete: if false;
+   }
+
+match /helloassoDiagnostics/{id} {
    allow get: if owner() && id == 'current';
    allow list, create, update, delete: if false;
   }

@@ -34,7 +34,7 @@ async function openApp(user,rights,token){
   Object.defineProperty(window,'gibSession',{value:session,configurable:true});
   window.gibBackend=Object.freeze({api,db,uid:user.uid,email:user.email||'membre',role:rights.role});
   try{window.gibPush=initPush({api,db,uid:user.uid,role:rights.role,getIdToken:()=>auth.currentUser?.getIdToken()});}catch(_){$('notificationStatus').textContent='Notifications indisponibles ; la connexion reste utilisable.';}
-  try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./app.js?v=20261106-connexion-16';script.onload=resolve;script.onerror=reject;document.body.append(script);});await window.gibReady;loadedUid=user.uid;}catch(error){
+  try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./app.js?v=20261106-audit-17';script.onload=resolve;script.onerror=reject;document.body.append(script);});await window.gibReady;loadedUid=user.uid;}catch(error){
    console.error('[GIB CONNECT] Module secondaire indisponible :',error);
    // Le droit d'accès a déjà été confirmé par le document /access/{uid}.
    // Ne pas enfermer l'utilisateur dans l'écran de connexion lorsqu'un module
@@ -73,7 +73,7 @@ function monitorUser(user){
   $('verifyEmail').classList.add('hidden');
   if(loadedUid&&window.gibSession.role!==rights.role){location.reload();return;}
   openApp(user,rights,token);
- },error=>{if(token===epoch)lock(errorMessage(error));});
+ },error=>{if(token===epoch){console.error('[GIB] Lecture des droits /access/'+user.uid,error);lock('Accès Firebase refusé pour ton document de droits : '+(error?.code||error?.message||'erreur')+'. Les modules secondaires ne sont pas en cause.');}});
 }
 $('loginForm').onsubmit=async e=>{e.preventDefault();controls(true);status('Connexion…');try{await api.signInWithEmailAndPassword(auth,$('loginEmail').value.trim(),$('loginPassword').value);}catch(error){status(errorMessage(error));}finally{$('loginPassword').value='';controls(false);}};
 $('googleLogin').onclick=async()=>{controls(true);status('Ouverture de Google…');try{await api.signInWithPopup(auth,new api.GoogleAuthProvider());}catch(error){status(errorMessage(error));}finally{controls(false);}};
