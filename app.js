@@ -218,7 +218,8 @@ window.gibReady=(async()=>{
    if(!snap.exists()){box.textContent='Aucun rapport publié. Lance la synchronisation GitHub Actions.';return;}
    const d=snap.data();let states=[];
    try{states=JSON.parse(d.etatsJson||'[]');}catch(e){states=[];}
-   const fmt=states.map(x=>esc(x.etat)+': '+Number(x.nombre||0)).join(' · ');
+   const nomsStatuts={Authorized:'Autorisé',Pending:'En attente',Captured:'Encaissé',Paid:'Payé',Succeeded:'Réussi',Failed:'Échoué',Refused:'Refusé',Cancelled:'Annulé',Canceled:'Annulé',Refunded:'Remboursé',PartiallyRefunded:'Partiellement remboursé'};
+   const fmt=states.map(x=>esc(nomsStatuts[x.etat]||x.etat)+': '+Number(x.nombre||0)).join(' · ');
    box.innerHTML='<strong>'+Number(d.commandes||0)+' commandes · '+Number(d.articles||0)+' articles · '+Number(d.references_paiements||0)+' échéances</strong><p>'+fmt+'</p><p class="note">Dernière mise à jour : '+esc(d.misAJour?.toDate?.().toLocaleString('fr-FR')||'inconnue')+'</p>';
   },err=>{const box=$('helloassoDashboardContent');if(box)box.textContent='Rapport indisponible : vérifie les règles Firestore.';console.warn('Rapport HelloAsso',err);});
  }
