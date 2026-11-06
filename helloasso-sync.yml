@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
+      - uses: actions/checkout@v4
       - name: Authentification Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
@@ -71,6 +72,7 @@ jobs:
           echo 'Lecture HelloAsso terminée.'
           jq '{commandes, articles, references_paiements, etats, versements}' rapport/synthese-cotisations.json
           echo 'Rapport agrégé préparé. Aucune restriction de compte.'
+          cp "$tmp/orders.jsonl" "$RUNNER_TEMP/helloasso-orders.jsonl"
 
       - name: Publier le tableau de bord HelloAsso dans Firebase
         shell: bash
@@ -100,6 +102,16 @@ jobs:
           fi
           echo 'Tableau de bord HelloAsso actualisé dans Firebase.'
           echo 'Aucune cotisation individuelle, aucun compte et aucune restriction modifiés.' 
+
+      - name: Synchroniser les commandes et paiements individuels dans Firebase
+        shell: bash
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          umask 077
+          python3 helloasso_individual_sync.py "$RUNNER_TEMP/helloasso-orders.jsonl"
+          rm -f "$RUNNER_TEMP/helloasso-orders.jsonl"
 
       - name: Conserver le rapport technique
         uses: actions/upload-artifact@v4
