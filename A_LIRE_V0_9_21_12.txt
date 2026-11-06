@@ -1,0 +1,10 @@
+G.I.B. CONNECT V0.9.21.12 — MODÉRATION DES MESSAGES
+
+1. Déployer le contenu du ZIP sur GitHub Pages.
+2. Publier REGLES_FIRESTORE_A_COPIER_DANS_FIREBASE.txt dans Firebase Firestore Database > Règles.
+3. Vérifier avec un compte modérateur et un compte membre : suppression de message tiers en salon general/groupe ; impossibilité en conversation privée.
+4. Garder une sauvegarde de la version précédente.
+
+La suppression est définitive dans Firestore. Les règles autorisent la suppression des messages de tiers seulement dans les salons general/groupe auxquels le modérateur a accès ; les messages privés restent supprimables uniquement par leur auteur (hors procédure existante de suppression complète d’une conversation).
+
+ATTENTION : les règles existantes de suppression complète des conversations privées par un administrateur ne sont pas modifiées dans cette version.
