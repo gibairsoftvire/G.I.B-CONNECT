@@ -34,13 +34,23 @@ async function openApp(user,rights,token){
   Object.defineProperty(window,'gibSession',{value:session,configurable:true});
   window.gibBackend=Object.freeze({api,db,uid:user.uid,email:user.email||'membre',role:rights.role});
   try{window.gibPush=initPush({api,db,uid:user.uid,role:rights.role,getIdToken:()=>auth.currentUser?.getIdToken()});}catch(_){$('notificationStatus').textContent='Notifications indisponibles ; la connexion reste utilisable.';}
-  try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./app.js?v=20261106-connexion-15';script.onload=resolve;script.onerror=reject;document.body.append(script);});await window.gibReady;loadedUid=user.uid;}catch(error){console.error('[GIB CONNECT] Échec initialisation',error);window.gibStop?.();opening=false;lock('Synchronisation impossible : '+(error?.code||error?.message||String(error)));return;}
+  try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./app.js?v=20261106-connexion-16';script.onload=resolve;script.onerror=reject;document.body.append(script);});await window.gibReady;loadedUid=user.uid;}catch(error){
+   console.error('[GIB CONNECT] Module secondaire indisponible :',error);
+   // Le droit d'accès a déjà été confirmé par le document /access/{uid}.
+   // Ne pas enfermer l'utilisateur dans l'écran de connexion lorsqu'un module
+   // secondaire Firestore est refusé. Ne jamais élargir les règles de sécurité.
+   if(token!==epoch)return;
+   if(!document.getElementById('appShell') || !window.gibBackend){opening=false;lock('Initialisation impossible : '+(error?.code||error?.message||String(error)));return;}
+   loadedUid=user.uid;
+   window.gibPartialStartupError=error?.code||error?.message||String(error);
+   console.warn('[GIB CONNECT] Ouverture en mode dégradé :',window.gibPartialStartupError);
+  }
  }
  if(token!==epoch)return;
  $('connectedAccount').textContent='Compte connecté : '+session.email;
  $('accountRights').textContent='Droits : '+({owner:'Administrateur principal',admin:'Modérateur',moderator:'Modérateur',member:'Membre'})[rights.role];
  $('logoutButton').onclick=logout;
- $('loginPassword').value='';$('authGate').hidden=true;$('appShell').hidden=false;window.gibPush?.offerOnboarding?.();
+ $('loginPassword').value='';$('authGate').hidden=true;$('appShell').hidden=false;if(window.gibPartialStartupError){const t=$('toast');if(t){t.textContent='Connexion rétablie. Certaines rubriques sont indisponibles ('+window.gibPartialStartupError+').';t.classList.remove('hidden');}}window.gibPush?.offerOnboarding?.();
 }
 function monitorUser(user){
  const token=++epoch;if(unsubscribe){unsubscribe();unsubscribe=null;}
