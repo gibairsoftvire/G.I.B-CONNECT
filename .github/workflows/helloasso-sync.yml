@@ -12,13 +12,6 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: Vérifier la configuration Google Cloud
-        env:
-          PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
-        run: |
-          test -n "$PROVIDER" && test -n "$SERVICE_ACCOUNT" || { echo 'Variables Google Cloud manquantes'; exit 1; }
-          echo 'Configuration Google Cloud présente.'
       - name: Authentification sécurisée Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
@@ -26,50 +19,54 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
+
       - name: Vérifier la connexion Google Cloud
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
         run: |
-          test -n "$ACCESS_TOKEN" || exit 1
-          echo 'Connexion Google Cloud réussie.'
-      - name: Diagnostiquer les accès HelloAsso sans afficher de données privées
+          test -n "$ACCESS_TOKEN" || { echo 'Jeton Google Cloud absent'; exit 1; }
+          echo 'Connexion Google Cloud OK'
+
+      - name: Authentifier HelloAsso avec curl et vérifier les accès
         shell: bash
         env:
           CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.HELLOASSO_CLIENT_SECRET }}
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import os, urllib.request, urllib.parse, urllib.error, json
-          base='https://api.helloasso.com'
+          test -n "$CLIENT_ID" && test -n "$CLIENT_SECRET" || { echo 'Identifiants HelloAsso absents'; exit 1; }
+          response=$(mktemp)
+          trap 'rm -f "$response"' EXIT
+          code=$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
+            --output "$response" --write-out '%{http_code}' \
+            --request POST 'https://api.helloasso.com/oauth2/token' \
+            --header 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'grant_type=client_credentials' \
+            --data-urlencode "client_id=$CLIENT_ID" \
+            --data-urlencode "client_secret=$CLIENT_SECRET")
+          echo "Authentification HelloAsso : HTTP $code"
+          if [ "$code" != 200 ]; then
+            echo 'Authentification refusée. Ne pas changer les clés automatiquement.'
+            exit 1
+          fi
+          token=$(jq -er '.access_token | select(type == "string" and length > 0)' "$response") || {
+            echo 'Jeton HelloAsso absent'; exit 1;
+          }
+          echo 'Jeton HelloAsso obtenu.'
           org='g-i-b-groupe-d-intervention-du-bocage'
           form='cotisation-g-i-b-airsoft'
-          payload=urllib.parse.urlencode({'grant_type':'client_credentials','client_id':os.environ['CLIENT_ID'],'client_secret':os.environ['CLIENT_SECRET']}).encode()
-          try:
-              req=urllib.request.Request(base+'/oauth2/token',data=payload,headers={'Content-Type':'application/x-www-form-urlencoded'})
-              with urllib.request.urlopen(req,timeout=30) as resp:
-                  token=json.load(resp).get('access_token')
-          except urllib.error.HTTPError as e:
-              raise SystemExit(f'Authentification HelloAsso : HTTP {e.code}')
-          if not token:
-              raise SystemExit('Authentification HelloAsso : jeton absent')
-          print('Authentification HelloAsso : OK')
-          paths=[
-              ('Fiche association',f'/v5/organizations/{org}'),
-              ('Liste des formulaires',f'/v5/organizations/{org}/forms?pageIndex=1&pageSize=1'),
-              ('Fiche campagne',f'/v5/organizations/{org}/forms/Membership/{form}/public'),
-              ('Commandes campagne',f'/v5/organizations/{org}/forms/Membership/{form}/orders?pageIndex=1&pageSize=1'),
-          ]
-          for label,path in paths:
-              req=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+token,'Accept':'application/json'})
-              try:
-                  with urllib.request.urlopen(req,timeout=30) as resp:
-                      code=resp.status
-              except urllib.error.HTTPError as e:
-                  code=e.code
-              except Exception as e:
-                  print(f'{label} : erreur réseau ({type(e).__name__})')
-                  continue
-              print(f'{label} : HTTP {code}')
-          print('Diagnostic terminé. Aucun contenu de réponse affiché. Aucune écriture Firebase.')
-          PY
+          check_endpoint() {
+            local label="$1" url="$2" http
+            http=$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
+              --output /dev/null --write-out '%{http_code}' \
+              --header "Authorization: Bearer $token" \
+              --header 'Accept: application/json' "$url") || {
+              echo "$label : erreur réseau"; return 0;
+            }
+            echo "$label : HTTP $http"
+          }
+          check_endpoint 'Association' "https://api.helloasso.com/v5/organizations/$org"
+          check_endpoint 'Formulaires' "https://api.helloasso.com/v5/organizations/$org/forms?pageIndex=1&pageSize=1"
+          check_endpoint 'Commandes cotisations' "https://api.helloasso.com/v5/organizations/$org/forms/Membership/$form/orders?pageIndex=1&pageSize=1"
+          echo 'Diagnostic terminé : aucune écriture Firebase, aucune donnée privée affichée.'
