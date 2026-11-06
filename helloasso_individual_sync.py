@@ -85,7 +85,11 @@ def main():
             state=item.get('state') or 'Unknown'
             assigned=old.get('firebaseUid') if old.get('mappingVerified') is True else ''
             verified=bool(assigned)
-            if state=='Processed':
+            # La valeur de state varie selon les articles HelloAsso. Ne pas
+            # confondre liaison d'identité et validation d'un paiement.
+            excluded={'canceled','cancelled','refunded','deleted','rejected','failed'}
+            eligible=str(state).strip().lower() not in excluded
+            if eligible:
                 if iid in KNOWN:
                     assigned=KNOWN[iid];verified=True
                 elif not verified:
@@ -93,12 +97,14 @@ def main():
                     candidates=by_email.get(e,set()) if e else set()
                     if len(candidates)==1:
                         assigned=next(iter(candidates));verified=True
+            else:
+                assigned='';verified=False
             write('helloassoItems/'+iid,{
                 'itemId':iid,'orderId':oid,'itemState':state,
                 'itemType':item.get('type') or 'Unknown','lastSync':now,
                 'firebaseUid':assigned or '','mappingVerified':verified
             })
-            if state=='Processed' and verified:
+            if eligible and verified:
                 mapped.setdefault(assigned,[]).append({'itemId':iid,'orderId':oid})
             count+=1
         for payment in payments:
@@ -129,6 +135,7 @@ def main():
             'note':'Statuts de commande uniquement; ne prouve pas les mensualites encaissees.'
         })
     print('Fiches membres synchronisées : '+str(len(mapped))+'. Aucun compte restreint.')
+    print('Correspondances connues trouvées : '+str(sum(1 for links in mapped.values() for link in links if link['itemId'] in KNOWN))+'.')
     print(f'Import Firestore terminé : {len(orders)} commandes, {count} articles, '+str(sum(len(o.get('payments') or []) for o in orders))+' paiements.')
     print('Aucune adhésion validée automatiquement. Aucune restriction appliquée.')
 
