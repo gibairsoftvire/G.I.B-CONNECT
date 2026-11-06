@@ -1,25 +1,28 @@
-name: GIB - Analyse dates et versements HelloAsso
+name: GIB - Synchronisation cotisations HelloAsso
 
-on:
+"on":
   workflow_dispatch:
+  schedule:
+    - cron: '17 7 * * *'
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
-  lecture-cotisations:
+  synchronisation:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Authentification sécurisée Google Cloud
+      - name: Authentification Google Cloud
+        id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
 
-      - name: Analyser les dates et les versements sans donnees personnelles
+      - name: Récupérer les cotisations et préparer un rapport confidentiel
         shell: bash
         env:
           CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
@@ -27,55 +30,51 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
+          mkdir -p rapport
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
           test -n "$CLIENT_ID" && test -n "$CLIENT_SECRET"
-          auth_code=$(curl --silent --show-error --retry 2 --connect-timeout 10 --max-time 40 \
-            -o "$tmp/auth.json" -w '%{http_code}' \
+          code=$(curl -sS --retry 2 --connect-timeout 10 --max-time 40 -o "$tmp/auth.json" -w '%{http_code}' \
             -X POST 'https://api.helloasso.com/oauth2/token' \
             -H 'Content-Type: application/x-www-form-urlencoded' \
             --data-urlencode 'grant_type=client_credentials' \
             --data-urlencode "client_id=$CLIENT_ID" \
             --data-urlencode "client_secret=$CLIENT_SECRET")
-          if [ "$auth_code" != 200 ]; then
-            echo "::error::Authentification HelloAsso : HTTP $auth_code"; exit 1
-          fi
+          if [ "$code" != 200 ]; then echo "::error::Authentification HelloAsso HTTP $code"; exit 1; fi
           token=$(jq -er '.access_token | select(type == "string" and length > 0)' "$tmp/auth.json")
-          echo 'Authentification HelloAsso : OK'
           org='g-i-b-groupe-d-intervention-du-bocage'
           form='cotisation-g-i-b-airsoft'
+          : > "$tmp/orders.jsonl"
           page=1
-          : > "$tmp/all.jsonl"
           while [ "$page" -le 100 ]; do
             url="https://api.helloasso.com/v5/organizations/$org/forms/Membership/$form/orders?pageIndex=$page&pageSize=100"
-            code=$(curl --silent --show-error --retry 2 --connect-timeout 10 --max-time 40 \
+            code=$(curl -sS --retry 2 --connect-timeout 10 --max-time 40 \
               -o "$tmp/page.json" -w '%{http_code}' \
               -H "Authorization: Bearer $token" -H 'Accept: application/json' "$url")
-            echo "Page $page : HTTP $code"
-            if [ "$code" != 200 ]; then echo '::error::Lecture commandes impossible.'; exit 1; fi
+            if [ "$code" != 200 ]; then echo "::error::Lecture commandes HTTP $code"; exit 1; fi
             jq -e '.data | type == "array"' "$tmp/page.json" >/dev/null
-            jq -c '.data[] | (.payments // [])[] | {state, cashOutState, date, installmentNumber, paymentMeans}' "$tmp/page.json" >> "$tmp/all.jsonl"
+            jq -c '.data[]' "$tmp/page.json" >> "$tmp/orders.jsonl"
             n=$(jq '.data | length' "$tmp/page.json")
             if [ "$n" -lt 100 ]; then break; fi
             page=$((page+1))
           done
-          if [ "$page" -gt 100 ]; then echo '::error::Pagination incomplete.'; exit 1; fi
-          echo '--- Etats de paiement et versement (comptages) ---'
-          jq -sr 'group_by([(.state // "absent"), (.cashOutState // "absent")])[] | "state=" + (.[0].state // "absent" | tostring) + ", cashOutState=" + (.[0].cashOutState // "absent" | tostring) + ", nombre=" + (length | tostring)' "$tmp/all.jsonl"
-          echo '--- Numeros echeance par etat (comptages) ---'
-          jq -sr 'group_by([(.installmentNumber // -1), (.state // "absent")])[] | "echeance=" + (.[0].installmentNumber // "absent" | tostring) + ", state=" + (.[0].state // "absent" | tostring) + ", nombre=" + (length | tostring)' "$tmp/all.jsonl"
-          echo '--- Repartition des dates par mois et etat (comptages) ---'
-          jq -sr '
-            def mois:
-              if (.date | type) == "string" then
-                if (.date | test("^[0-9]{4}-[0-9]{2}")) then .date[0:7] else "date_texte_non_iso" end
-              elif (.date | type) == "number" then "date_numerique"
-              elif .date == null then "date_absente"
-              else "date_autre_format" end;
-            group_by([mois, (.state // "absent")])[] |
-            "mois=" + (.[0] | mois) + ", state=" + (.[0].state // "absent" | tostring) + ", nombre=" + (length | tostring)
-          ' "$tmp/all.jsonl"
-          echo '--- Format des dates ---'
-          jq -sr 'group_by(.date | type)[] | "type=" + (.[0].date | type) + ", nombre=" + (length | tostring)' "$tmp/all.jsonl"
-          echo 'Aucune date ne prouve a elle seule une date d exigibilite ou un encaissement definitif.'
-          echo 'Aucune donnee personnelle affichee. Aucune ecriture Firebase. Aucune restriction.'
+          if [ "$page" -gt 100 ]; then echo '::error::Pagination incomplète'; exit 1; fi
+          # Rapport strictement agrégé : aucune identité, aucun ID, aucune date individuelle.
+          jq -s '{
+            commandes: length,
+            articles: ([.[] | (.items // [] | length)] | add // 0),
+            references_paiements: ([.[] | (.payments // [] | length)] | add // 0),
+            etats: ([.[] | .payments[]? | .state // "Non renseigne"] | group_by(.) | map({etat: .[0], nombre: length})),
+            versements: ([.[] | .payments[]? | .cashOutState // "Non renseigne"] | group_by(.) | map({etat: .[0], nombre: length})),
+            numeros_echeances: ([.[] | .payments[]? | .installmentNumber // "Non renseigne"] | group_by(.) | map({numero: .[0], nombre: length}))
+          }' "$tmp/orders.jsonl" > rapport/synthese-cotisations.json
+          echo 'Lecture HelloAsso terminée.'
+          jq '{commandes, articles, references_paiements, etats, versements}' rapport/synthese-cotisations.json
+          echo 'Aucune écriture Firebase, aucune restriction de compte.'
+
+      - name: Conserver le rapport technique
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-cotisations-helloasso
+          path: rapport/synthese-cotisations.json
+          retention-days: 7
