@@ -1,5 +1,4 @@
-
-name: GIB - Test connexion HelloAsso Firebase
+name: GIB - Diagnostic lecture HelloAsso
 
 on:
   workflow_dispatch:
@@ -12,25 +11,14 @@ jobs:
   test-connexion:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-
     steps:
       - name: Vérifier la configuration Google Cloud
         env:
           PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
         run: |
-          if [ -z "$PROVIDER" ] || [ -z "$SERVICE_ACCOUNT" ]; then
-            echo "::error::Variables Google Cloud manquantes."
-            exit 1
-          fi
-          echo "Configuration Google Cloud présente."
-
-      - name: Diagnostiquer l'identité GitHub
-        shell: bash
-        run: |
-          echo "Dépôt : $GITHUB_REPOSITORY"
-          echo "Branche : $GITHUB_REF"
-
+          test -n "$PROVIDER" && test -n "$SERVICE_ACCOUNT" || { echo 'Variables Google Cloud manquantes'; exit 1; }
+          echo 'Configuration Google Cloud présente.'
       - name: Authentification sécurisée Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
@@ -38,161 +26,50 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
-
       - name: Vérifier la connexion Google Cloud
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: |
-          if [ -z "$ACCESS_TOKEN" ]; then
-            echo "::error::Jeton Google Cloud absent."
-            exit 1
-          fi
-          echo "Connexion Google Cloud réussie."
-
-      - name: Vérifier les identifiants HelloAsso
-        env:
-          CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.HELLOASSO_CLIENT_SECRET }}
-        run: |
-          if [ -z "$CLIENT_ID" ] || [ -z "$CLIENT_SECRET" ]; then
-            echo "::error::Identifiants HelloAsso manquants."
-            exit 1
-          fi
-          echo "Identifiants HelloAsso présents."
-
-      - name: Lire les adhésions HelloAsso
+          test -n "$ACCESS_TOKEN" || exit 1
+          echo 'Connexion Google Cloud réussie.'
+      - name: Diagnostiquer les accès HelloAsso sans afficher de données privées
         shell: bash
         env:
           CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.HELLOASSO_CLIENT_SECRET }}
-          ORG_SLUG: g-i-b-groupe-d-intervention-du-bocage
-          FORM_SLUG: cotisation-g-i-b-airsoft
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os
-          import json
-          import urllib.request
-          import urllib.parse
-          import urllib.error
-
-          base = "https://api.helloasso.com"
-          org = os.environ["ORG_SLUG"]
-          form = os.environ["FORM_SLUG"]
-
-          def request_json(url, data=None, headers=None):
-              req = urllib.request.Request(
-                  url, data=data, headers=headers or {}
-              )
-              try:
-                  with urllib.request.urlopen(req, timeout=30) as r:
-                      return json.load(r)
-              except urllib.error.HTTPError as e:
-                  raise RuntimeError(
-                      f"HelloAsso HTTP {e.code}"
-                  ) from None
-
-          credentials = urllib.parse.urlencode({
-              "grant_type": "client_credentials",
-              "client_id": os.environ["CLIENT_ID"],
-              "client_secret": os.environ["CLIENT_SECRET"]
-          }).encode()
-
-          auth = request_json(
-              base + "/oauth2/token",
-              data=credentials,
-              headers={
-                  "Content-Type":
-                  "application/x-www-form-urlencoded"
-              }
-          )
-
-          token = auth.get("access_token")
+          import os, urllib.request, urllib.parse, urllib.error, json
+          base='https://api.helloasso.com'
+          org='g-i-b-groupe-d-intervention-du-bocage'
+          form='cotisation-g-i-b-airsoft'
+          payload=urllib.parse.urlencode({'grant_type':'client_credentials','client_id':os.environ['CLIENT_ID'],'client_secret':os.environ['CLIENT_SECRET']}).encode()
+          try:
+              req=urllib.request.Request(base+'/oauth2/token',data=payload,headers={'Content-Type':'application/x-www-form-urlencoded'})
+              with urllib.request.urlopen(req,timeout=30) as resp:
+                  token=json.load(resp).get('access_token')
+          except urllib.error.HTTPError as e:
+              raise SystemExit(f'Authentification HelloAsso : HTTP {e.code}')
           if not token:
-              raise RuntimeError("Jeton HelloAsso absent")
-
-          print("Authentification HelloAsso réussie.")
-
-          headers = {
-              "Authorization": "Bearer " + token,
-              "Accept": "application/json"
-          }
-
-          def get_pages(path):
-              result = []
-              continuation = None
-              seen = set()
-
-              for page in range(1, 501):
-                  params = {"pageSize": 100}
-                  if continuation:
-                      params["continuationToken"] = continuation
-
-                  url = (
-                      base + path + "?" +
-                      urllib.parse.urlencode(params)
-                  )
-                  response = request_json(url, headers=headers)
-                  data = response.get("data")
-
-                  if not isinstance(data, list):
-                      raise RuntimeError(
-                          "Réponse HelloAsso inattendue"
-                      )
-
-                  if not data:
-                      return result
-
-                  result.extend(data)
-                  pagination = response.get("pagination") or {}
-                  next_token = pagination.get("continuationToken")
-
-                  if not next_token:
-                      return result
-
-                  if next_token in seen:
-                      raise RuntimeError(
-                          "Pagination HelloAsso répétée"
-                      )
-
-                  seen.add(next_token)
-                  continuation = next_token
-
-              raise RuntimeError(
-                  "Limite de pagination atteinte"
-              )
-
-          prefix = "/v5/organizations/" + org
-
-          forms = get_pages(prefix + "/forms")
-          matching = [
-              f for f in forms
-              if f.get("formSlug") == form
-              and f.get("formType") == "Membership"
+              raise SystemExit('Authentification HelloAsso : jeton absent')
+          print('Authentification HelloAsso : OK')
+          paths=[
+              ('Fiche association',f'/v5/organizations/{org}'),
+              ('Liste des formulaires',f'/v5/organizations/{org}/forms?pageIndex=1&pageSize=1'),
+              ('Fiche campagne',f'/v5/organizations/{org}/forms/Membership/{form}/public'),
+              ('Commandes campagne',f'/v5/organizations/{org}/forms/Membership/{form}/orders?pageIndex=1&pageSize=1'),
           ]
-
-          print("Formulaires trouvés :", len(forms))
-          print("Campagne de cotisation trouvée :", bool(matching))
-
-          if not matching:
-              raise RuntimeError(
-                  "Campagne d'adhésion introuvable"
-              )
-
-          path = (
-              prefix + "/forms/Membership/" +
-              form + "/orders"
-          )
-          orders = get_pages(path)
-
-          print("Commandes d'adhésion :", len(orders))
-
-          item_count = sum(
-              len(o.get("items") or []) for o in orders
-          )
-          print("Articles d'adhésion :", item_count)
-
-          print("Lecture HelloAsso terminée.")
-          print("Aucune donnée personnelle affichée.")
-          print("Aucune modification Firebase.")
+          for label,path in paths:
+              req=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+token,'Accept':'application/json'})
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as resp:
+                      code=resp.status
+              except urllib.error.HTTPError as e:
+                  code=e.code
+              except Exception as e:
+                  print(f'{label} : erreur réseau ({type(e).__name__})')
+                  continue
+              print(f'{label} : HTTP {code}')
+          print('Diagnostic terminé. Aucun contenu de réponse affiché. Aucune écriture Firebase.')
           PY
