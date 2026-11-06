@@ -1,4 +1,4 @@
-name: GIB - Analyse echeances par adhesion
+name: GIB - Analyse dates et versements HelloAsso
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
 
-      - name: Analyser les echeances par adhesion sans donnees personnelles
+      - name: Analyser les dates et les versements sans donnees personnelles
         shell: bash
         env:
           CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
@@ -30,79 +30,44 @@ jobs:
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
           test -n "$CLIENT_ID" && test -n "$CLIENT_SECRET"
-          auth_code=$(curl --fail-with-body --silent --show-error --retry 2 \
-            --connect-timeout 10 --max-time 40 -o "$tmp/auth.json" -w '%{http_code}' \
+          auth_code=$(curl --silent --show-error --retry 2 --connect-timeout 10 --max-time 40 \
+            -o "$tmp/auth.json" -w '%{http_code}' \
             -X POST 'https://api.helloasso.com/oauth2/token' \
             -H 'Content-Type: application/x-www-form-urlencoded' \
             --data-urlencode 'grant_type=client_credentials' \
             --data-urlencode "client_id=$CLIENT_ID" \
             --data-urlencode "client_secret=$CLIENT_SECRET")
-          test "$auth_code" = 200
+          if [ "$auth_code" != 200 ]; then
+            echo "::error::Authentification HelloAsso : HTTP $auth_code"; exit 1
+          fi
           token=$(jq -er '.access_token | select(type == "string" and length > 0)' "$tmp/auth.json")
           echo 'Authentification HelloAsso : OK'
           org='g-i-b-groupe-d-intervention-du-bocage'
           form='cotisation-g-i-b-airsoft'
-          total_orders=0
-          total_items=0
-          total_payment_refs=0
-          total_order_payment_fields=0
-          total_items_with_payments=0
           page=1
+          : > "$tmp/all.jsonl"
           while [ "$page" -le 100 ]; do
             url="https://api.helloasso.com/v5/organizations/$org/forms/Membership/$form/orders?pageIndex=$page&pageSize=100"
             code=$(curl --silent --show-error --retry 2 --connect-timeout 10 --max-time 40 \
               -o "$tmp/page.json" -w '%{http_code}' \
               -H "Authorization: Bearer $token" -H 'Accept: application/json' "$url")
             echo "Page $page : HTTP $code"
-            if [ "$code" != 200 ]; then
-              echo '::error::Lecture des commandes refusée ou indisponible.'
-              exit 1
-            fi
-            jq -e '.data | type == "array"' "$tmp/page.json" >/dev/null || {
-              echo '::error::Structure de réponse inattendue.'; exit 1;
-            }
+            if [ "$code" != 200 ]; then echo '::error::Lecture commandes impossible.'; exit 1; fi
+            jq -e '.data | type == "array"' "$tmp/page.json" >/dev/null
+            jq -c '.data[] | (.payments // [])[] | {state, cashOutState, date, installmentNumber, paymentMeans}' "$tmp/page.json" >> "$tmp/all.jsonl"
             n=$(jq '.data | length' "$tmp/page.json")
-            items=$(jq '[.data[] | (.items // [] | length)] | add // 0' "$tmp/page.json")
-            total_orders=$((total_orders+n))
-            total_items=$((total_items+items))
-            # Inspecter uniquement des comptes et des noms de champs autorisés.
-            # Ne jamais imprimer les objets complets, emails, noms ou montants individuels.
-            refs=$(jq '[.data[] | (.payments // [] | if type == "array" then length else 0 end)] | add // 0' "$tmp/page.json")
-            fields=$(jq '[.data[] | select(has("payments"))] | length' "$tmp/page.json")
-            items_with_payments=$(jq '[.data[].items[]? | select(has("payments"))] | length' "$tmp/page.json")
-            total_payment_refs=$((total_payment_refs+refs))
-            total_order_payment_fields=$((total_order_payment_fields+fields))
-            total_items_with_payments=$((total_items_with_payments+items_with_payments))
-            echo "Commandes sur cette page : $n"
-            echo "Références de paiements : $refs"
-            # Diagnostic anonyme par commande : aucune identité, aucun identifiant, aucun montant.
-            jq -r '
-              .data | to_entries[] |
-              .key as $i | .value as $o |
-              ($o.payments // []) as $p |
-              "Adhesion anonyme " + (($i + 1) | tostring) +
-              " : echeances=" + ($p | length | tostring) +
-              ", Authorized=" + ([$p[] | select(.state == "Authorized")] | length | tostring) +
-              ", Pending=" + ([$p[] | select(.state == "Pending")] | length | tostring) +
-              ", Canceled=" + ([$p[] | select(.state == "Canceled")] | length | tostring) +
-              ", Refunded=" + ([$p[] | select(.state == "Refunded")] | length | tostring) +
-              ", autres=" + ([$p[] | select(.state != "Authorized" and .state != "Pending" and .state != "Canceled" and .state != "Refunded")] | length | tostring)
-            ' "$tmp/page.json"
-            echo 'Presence des champs de dates (nombre de references) :'
-            jq -r '[.data[].payments[]? | {date: has("date"), paymentDate: has("paymentDate"), installmentNumber: has("installmentNumber")}] | "date=" + ([.[] | select(.date)] | length | tostring) + ", paymentDate=" + ([.[] | select(.paymentDate)] | length | tostring) + ", installmentNumber=" + ([.[] | select(.installmentNumber)] | length | tostring)' "$tmp/page.json"
-            echo "Commandes sur la page : $n"
-            # Pagination par index : s'arrête à une page incomplète.
             if [ "$n" -lt 100 ]; then break; fi
             page=$((page+1))
           done
-          if [ "$page" -gt 100 ]; then
-            echo '::error::Limite de pagination atteinte; total incomplet.'; exit 1
-          fi
-          echo "Total commandes récupérées : $total_orders"
-          echo "Total articles rattachés aux commandes : $total_items"
-          echo "Total références de paiements dans les commandes : $total_payment_refs"
-          echo "Total commandes avec champ payments : $total_order_payment_fields"
-          echo "Total articles avec champ payments : $total_items_with_payments"
-          echo 'Diagnostic anonyme terminé : états techniques, sans preuve de date d’exigibilité ni d’encaissement définitif.'
-          echo 'Aucune restriction ou alerte activée.' 
-          echo 'Aucune donnée personnelle affichée. Aucune écriture Firebase.'
+          if [ "$page" -gt 100 ]; then echo '::error::Pagination incomplete.'; exit 1; fi
+          echo '--- Etats de paiement et versement (comptages) ---'
+          jq -sr 'group_by([(.state // "absent"), (.cashOutState // "absent")])[] | "state=" + (.[0].state // "absent" | tostring) + ", cashOutState=" + (.[0].cashOutState // "absent" | tostring) + ", nombre=" + (length | tostring)' "$tmp/all.jsonl"
+          echo '--- Numeros echeance par etat (comptages) ---'
+          jq -sr 'group_by([(.installmentNumber // -1), (.state // "absent")])[] | "echeance=" + (.[0].installmentNumber // "absent" | tostring) + ", state=" + (.[0].state // "absent" | tostring) + ", nombre=" + (length | tostring)' "$tmp/all.jsonl"
+          echo '--- Repartition des dates par mois et etat (comptages) ---'
+          jq -sr 'group_by([((.[0].date // "") | tostring), (.state // "absent")]) | .[] | empty' "$tmp/all.jsonl" >/dev/null
+          jq -sr 'group_by([((.date // "absent" | tostring)[0:7]), (.state // "absent")])[] | "mois=" + ((.[0].date // "absent" | tostring)[0:7]) + ", state=" + (.[0].state // "absent" | tostring) + ", nombre=" + (length | tostring)' "$tmp/all.jsonl"
+          echo '--- Format des dates et types de moyen de paiement ---'
+          jq -sr '"references=" + (length | tostring) + ", dates_non_vides=" + ([.[] | select((.date // "") != "")] | length | tostring)' "$tmp/all.jsonl"
+          echo 'Aucune date ne prouve a elle seule une date d exigibilite ou un encaissement definitif.'
+          echo 'Aucune donnee personnelle affichee. Aucune ecriture Firebase. Aucune restriction.'
