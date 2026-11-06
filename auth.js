@@ -34,7 +34,7 @@ async function openApp(user,rights,token){
   Object.defineProperty(window,'gibSession',{value:session,configurable:true});
   window.gibBackend=Object.freeze({api,db,uid:user.uid,email:user.email||'membre',role:rights.role});
   try{window.gibPush=initPush({api,db,uid:user.uid,role:rights.role,getIdToken:()=>auth.currentUser?.getIdToken()});}catch(_){$('notificationStatus').textContent='Notifications indisponibles ; la connexion reste utilisable.';}
-  try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./app.js';script.onload=resolve;script.onerror=reject;document.body.append(script);});await window.gibReady;loadedUid=user.uid;}catch{window.gibStop?.();opening=false;lock('Synchronisation impossible. Vérifie que les nouvelles règles Firestore ont été publiées, puis actualise la page.');return;}
+  try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./app.js';script.onload=resolve;script.onerror=reject;document.body.append(script);});await window.gibReady;loadedUid=user.uid;}catch(error){console.error('[GIB CONNECT] Erreur initialisation :',error);window.gibStop?.();opening=false;lock('Synchronisation impossible : '+(error?.code||error?.message||String(error))+'.');return;}
  }
  if(token!==epoch)return;
  $('connectedAccount').textContent='Compte connecté : '+session.email;
