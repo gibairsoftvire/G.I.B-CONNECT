@@ -1,4 +1,4 @@
-name: GIB - Analyse paiements HelloAsso
+name: GIB - Etats mensualites HelloAsso
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
 
-      - name: Analyser les commandes et les paiements sans données privées
+      - name: Compter les mensualites par etat sans donnees privees
         shell: bash
         env:
           CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
@@ -78,7 +78,13 @@ jobs:
             echo "Articles avec champ payments : $items_with_payments"
             echo 'Champs techniques de paiement présents (sans valeurs) :'
             jq -r '[.data[] | .payments[]? | keys[]] | unique | .[]' "$tmp/page.json" | grep -E '^(id|state|status|amount|date|paymentDate|cashOutState|installmentNumber|paymentMeans)$' || true
-            echo 'États des commandes (agrégés) :'
+            echo 'États des paiements (nombre de références, pas de prélèvements confirmés) :'
+            jq -r '[.data[] | .payments[]? | (.state // "non_renseigne" | tostring)] | group_by(.) | .[] | "  " + .[0] + " : " + (length | tostring)' "$tmp/page.json"
+            echo 'États des versements / cashOutState (agrégés) :'
+            jq -r '[.data[] | .payments[]? | (.cashOutState // "non_renseigne" | tostring)] | group_by(.) | .[] | "  " + .[0] + " : " + (length | tostring)' "$tmp/page.json"
+            echo 'Numeros de mensualites presents (comptage par numero) :'
+            jq -r '[.data[] | .payments[]? | (.installmentNumber // "non_renseigne" | tostring)] | group_by(.) | .[] | "  " + .[0] + " : " + (length | tostring)' "$tmp/page.json"
+            echo 'États des commandes (agrégés) :
             jq -r '[.data[] | (.state // "non_renseigne")] | group_by(.) | .[] | "  " + (.[0] | tostring) + " : " + (length | tostring)' "$tmp/page.json"
             echo "Commandes sur la page : $n"
             # Pagination par index : s'arrête à une page incomplète.
