@@ -1,0 +1,40 @@
+
+name: GIB - Test connexion HelloAsso Firebase
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test-connexion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Vérifier la configuration
+        env:
+          PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+        run: |
+          test -n "$PROVIDER" || exit 1
+          test -n "$SERVICE_ACCOUNT" || exit 1
+          echo "Variables Google Cloud présentes."
+
+      - name: Authentification sécurisée Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+
+      - name: Vérifier la connexion
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          test -n "$ACCESS_TOKEN" || exit 1
+          echo "Connexion Google Cloud réussie."
+          echo "Aucune donnée Firebase modifiée."
