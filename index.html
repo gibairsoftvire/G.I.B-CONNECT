@@ -42,4 +42,47 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
 })();
-</script></body></html>
+</script>
+<script id="gib-helloasso-paiements-en-cours">
+/* Filtre d'affichage uniquement : aucune modification de Firebase ou des paiements. */
+(function(){
+  const dashboardId='helloassoDashboardContent';
+  let busy=false;
+  function refresh(){
+    if(busy)return;
+    const box=document.getElementById(dashboardId);
+    if(!box)return;
+    const text=box.textContent||'';
+    if(!/(?:Autorisé|Authorized|En attente|Pending)\s*:\s*\d+/i.test(text))return;
+    const authorized=text.match(/(?:Autorisé|Authorized)\s*:\s*(\d+)/i);
+    const pending=text.match(/(?:En attente|Pending)\s*:\s*(\d+)/i);
+    if(!authorized&&!pending)return;
+    const parts=[];
+    if(authorized)parts.push('Autorisé : '+authorized[1]);
+    if(pending)parts.push('En attente : '+pending[1]);
+    const updated=Array.from(box.querySelectorAll('p')).find(p=>/Dernière mise à jour/i.test(p.textContent||''));
+    const updatedText=updated?.textContent||'';
+    const newText=parts.join(' · ');
+    if(box.dataset.gibCurrentOnly===newText && box.textContent.includes(newText) && !/Annulé|Remboursé|Canceled|Refunded|\d+ commandes/.test(box.textContent))return;
+    busy=true;
+    try{
+      box.replaceChildren();
+      const heading=document.createElement('strong');
+      heading.textContent='Paiements en cours';
+      const status=document.createElement('p');
+      status.textContent=newText;
+      box.append(heading,status);
+      if(updatedText){const date=document.createElement('p');date.className='note';date.textContent=updatedText;box.append(date);}
+      box.dataset.gibCurrentOnly=newText;
+    }finally{busy=false;}
+  }
+  function install(){
+    const parent=document.getElementById('cotisations')||document.body;
+    new MutationObserver(refresh).observe(parent,{childList:true,subtree:true,characterData:true});
+    refresh();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
+  else install();
+})();
+</script>
+</body></html>
