@@ -76,11 +76,15 @@ def civil_profiles():
     return result
 
 def beneficiary_name(item):
-    # L'identité du bénéficiaire, pas celle du payeur de la commande.
-    user=item.get('user') or {}
-    if not isinstance(user,dict):return None
-    first=normalize_name(user.get('firstName'))
-    last=normalize_name(user.get('lastName'))
+    # Only fields explicitly identifying the beneficiary, never the order payer.
+    for candidate in (item.get('user'), item.get('beneficiary'), item.get('participant')):
+        if isinstance(candidate,dict):
+            first=normalize_name(candidate.get('firstName'))
+            last=normalize_name(candidate.get('lastName'))
+            if first and last: return (first,last)
+    # Some HelloAsso exports flatten the beneficiary fields on the item.
+    first=normalize_name(item.get('firstName'))
+    last=normalize_name(item.get('lastName'))
     return (first,last) if first and last else None
 
 # Associations déjà vérifiées par le responsable dans Firebase / HelloAsso.
@@ -102,6 +106,9 @@ def main():
     mapped={}
     name_matches=0
     ambiguous=0
+    beneficiary_names=0
+    missing_civil_matches=0
+    missing_beneficiary_names=0
     now=datetime.datetime.now(datetime.timezone.utc).isoformat()
     for order in orders:
         oid=safe_id(order['id'])
@@ -129,7 +136,10 @@ def main():
                 elif not verified:
                     # Priorité au nom/prénom civil : adresse e-mail facultative.
                     name=beneficiary_name(item)
+                    if name: beneficiary_names+=1
+                    else: missing_beneficiary_names+=1
                     candidates=by_name.get(name,set()) if name else set()
+                    if name and not candidates: missing_civil_matches+=1
                     if len(candidates)==1:
                         assigned=next(iter(candidates));verified=True
                         name_matches+=1
@@ -177,6 +187,7 @@ def main():
         })
     print('Fiches membres synchronisées : '+str(len(mapped))+'. Aucun compte restreint.')
     print('Correspondances nom/prénom uniques : '+str(name_matches)+'. Identités ambiguës : '+str(ambiguous)+'.')
+    print('Diagnostic identités : '+str(sum(len(v) for v in by_name.values()))+' fiches civiles avec nom/prénom, '+str(beneficiary_names)+' articles avec identité bénéficiaire, '+str(missing_beneficiary_names)+' articles sans identité bénéficiaire, '+str(missing_civil_matches)+' identités sans fiche civile correspondante.')
     print('Correspondances connues trouvées : '+str(sum(1 for links in mapped.values() for link in links if link['itemId'] in KNOWN))+'.')
     print(f'Import Firestore terminé : {len(orders)} commandes, {count} articles, '+str(sum(len(o.get('payments') or []) for o in orders))+' paiements.')
     print('Aucune adhésion validée automatiquement. Aucune restriction appliquée.')
