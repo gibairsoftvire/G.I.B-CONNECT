@@ -3,7 +3,7 @@
 Does not mark memberships paid, change permissions, or assume a payer is a beneficiary.
 Uses only stable HelloAsso identifiers; no names, emails or phone numbers stored.
 """
-import json, os, re, sys, urllib.request, urllib.error, urllib.parse, datetime
+import json, os, re, sys, urllib.request, urllib.error, urllib.parse, datetime, unicodedata
 
 BASE='https://firestore.googleapis.com/v1/projects/gib-connect/databases/(default)/documents'
 TOKEN=os.environ['GOOGLE_ACCESS_TOKEN']
@@ -52,6 +52,37 @@ def profiles():
         url=BASE+'/profiles?pageSize=100&pageToken='+urllib.parse.quote(next_page) if next_page else None
     return result
 
+def normalize_name(value):
+    value=unicodedata.normalize('NFKD',str(value or ''))
+    value=''.join(c for c in value if not unicodedata.combining(c))
+    return re.sub(r'[^a-z0-9]+','',value.casefold())
+
+def civil_profiles():
+    # L'identité civile est saisie par un administrateur, jamais le pseudo.
+    result={}
+    url=BASE+'/memberCivil?pageSize=100'
+    while url:
+        req=urllib.request.Request(url,headers={'Authorization':'Bearer '+TOKEN})
+        with urllib.request.urlopen(req,timeout=35) as response: data=json.load(response)
+        for doc in data.get('documents',[]):
+            uid=doc['name'].split('/')[-1]
+            fields=doc.get('fields',{})
+            first=fields.get('firstName',{}).get('stringValue','')
+            last=fields.get('lastName',{}).get('stringValue','')
+            key=(normalize_name(first),normalize_name(last))
+            if all(key): result.setdefault(key,set()).add(uid)
+        page=data.get('nextPageToken')
+        url=BASE+'/memberCivil?pageSize=100&pageToken='+urllib.parse.quote(page) if page else None
+    return result
+
+def beneficiary_name(item):
+    # L'identité du bénéficiaire, pas celle du payeur de la commande.
+    user=item.get('user') or {}
+    if not isinstance(user,dict):return None
+    first=normalize_name(user.get('firstName'))
+    last=normalize_name(user.get('lastName'))
+    return (first,last) if first and last else None
+
 # Associations déjà vérifiées par le responsable dans Firebase / HelloAsso.
 KNOWN={
  '215867858':'ZrI6KdIsuRatDqv0cY2AKF5z16n2',
@@ -66,8 +97,11 @@ def beneficiary_email(item):
 def main():
     orders=[json.loads(line) for line in open(sys.argv[1],encoding='utf-8') if line.strip()]
     count=0
-    by_email=profiles()
+    by_email=profiles()  # Compatibilité pour les fiches déjà identifiées par e-mail.
+    by_name=civil_profiles()
     mapped={}
+    name_matches=0
+    ambiguous=0
     now=datetime.datetime.now(datetime.timezone.utc).isoformat()
     for order in orders:
         oid=safe_id(order['id'])
@@ -93,10 +127,17 @@ def main():
                 if iid in KNOWN:
                     assigned=KNOWN[iid];verified=True
                 elif not verified:
-                    e=beneficiary_email(item)
-                    candidates=by_email.get(e,set()) if e else set()
+                    # Priorité au nom/prénom civil : adresse e-mail facultative.
+                    name=beneficiary_name(item)
+                    candidates=by_name.get(name,set()) if name else set()
                     if len(candidates)==1:
                         assigned=next(iter(candidates));verified=True
+                        name_matches+=1
+                    elif len(candidates)>1:
+                        ambiguous+=1
+                    else:
+                        # Ne pas relier par e-mail seule : elle peut être celle d'un tiers.
+                        pass
             else:
                 assigned='';verified=False
             write('helloassoItems/'+iid,{
@@ -135,6 +176,7 @@ def main():
             'note':'Statuts de commande uniquement; ne prouve pas les mensualites encaissees.'
         })
     print('Fiches membres synchronisées : '+str(len(mapped))+'. Aucun compte restreint.')
+    print('Correspondances nom/prénom uniques : '+str(name_matches)+'. Identités ambiguës : '+str(ambiguous)+'.')
     print('Correspondances connues trouvées : '+str(sum(1 for links in mapped.values() for link in links if link['itemId'] in KNOWN))+'.')
     print(f'Import Firestore terminé : {len(orders)} commandes, {count} articles, '+str(sum(len(o.get('payments') or []) for o in orders))+' paiements.')
     print('Aucune adhésion validée automatiquement. Aucune restriction appliquée.')
