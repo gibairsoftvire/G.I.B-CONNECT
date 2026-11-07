@@ -105,6 +105,21 @@ KNOWN={
  '215994834':'a7lSvPBvb2Roz7SS46tuP4TBbnt2',
 }
 
+def single_item_order_name(order, item):
+    """Fallback when the HelloAsso order has exactly one membership item.
+
+    This is the order payer's identity, not proof of beneficiary identity.
+    Only use it if the item's own identity is absent, never conflicting.
+    """
+    items=[x for x in (order.get('items') or []) if x.get('id') is not None]
+    if len(items)!=1 or str(items[0]['id'])!=str(item.get('id')):
+        return None
+    payer=order.get('payer') or {}
+    if not isinstance(payer,dict):return None
+    first=normalize_name(payer.get('firstName'))
+    last=normalize_name(payer.get('lastName'))
+    return (first,last) if first and last else None
+
 def beneficiary_email(item):
     # Exclusivement l'adresse du bénéficiaire, jamais celle du payeur de la commande.
     user=item.get('user') or {}
@@ -121,6 +136,7 @@ def main():
     no_beneficiary=0
     unmatched_beneficiary=0
     eligible_with_identity=0
+    payer_candidates=0
     now=datetime.datetime.now(datetime.timezone.utc).isoformat()
     for order in orders:
         oid=safe_id(order['id'])
@@ -151,9 +167,19 @@ def main():
                     if name:eligible_with_identity+=1
                     else:no_beneficiary+=1
                     candidates=by_name.get(name,set()) if name else set()
+                    # Fallback conservateur : une seule adhésion dans la commande,
+                    # aucun bénéficiaire identifié sur l'article, nom du payeur unique.
+                    # Ne pas confondre avec une validation de paiement.
+                    payer_fallback=False
+                    if not name:
+                        payer_name=single_item_order_name(order,item)
+                        if payer_name:
+                            candidates=by_name.get(payer_name,set())
+                            payer_fallback=True
                     if len(candidates)==1:
                         assigned=next(iter(candidates));verified=True
                         name_matches+=1
+                        if payer_fallback:payer_candidates+=1
                     elif len(candidates)>1:
                         ambiguous+=1
                     else:
@@ -200,6 +226,7 @@ def main():
     print('Fiches membres synchronisées : '+str(len(mapped))+'. Aucun compte restreint.')
     print('Correspondances nom/prénom uniques : '+str(name_matches)+'. Identités ambiguës : '+str(ambiguous)+'.')
     print(f'Diagnostic bénéficiaires éligibles : {eligible_with_identity} avec nom/prénom, {no_beneficiary} sans identité exploitable, {unmatched_beneficiary} sans fiche civile correspondante.')
+    print('Rapprochements sur commande à adhésion unique : '+str(payer_candidates)+'.')
     print('Correspondances connues trouvées : '+str(sum(1 for links in mapped.values() for link in links if link['itemId'] in KNOWN))+'.')
     print(f'Import Firestore terminé : {len(orders)} commandes, {count} articles, '+str(sum(len(o.get('payments') or []) for o in orders))+' paiements.')
     print('Aucune adhésion validée automatiquement. Aucune restriction appliquée.')
