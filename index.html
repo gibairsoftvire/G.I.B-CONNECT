@@ -85,4 +85,22 @@
   else install();
 })();
 </script>
+<script id="gib-helloasso-lien-officiel-20261107">
+(function(){
+  const destination='https://www.helloasso.com/associations/g-i-b-groupe-d-intervention-du-bocage';
+  function isTarget(a){
+    return a instanceof HTMLAnchorElement && /ouvrir\s+helloasso/i.test((a.textContent||'').trim());
+  }
+  function update(){
+    document.querySelectorAll('a').forEach(a=>{if(isTarget(a)){a.href=destination;a.target='_blank';a.rel='noopener noreferrer';}});
+  }
+  document.addEventListener('click',function(e){
+    const a=e.target.closest?.('a');
+    if(!a||!isTarget(a))return;
+    a.href=destination;
+  },true);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',update,{once:true});else update();
+  new MutationObserver(update).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
 </body></html>
