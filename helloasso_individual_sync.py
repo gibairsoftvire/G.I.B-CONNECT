@@ -228,6 +228,21 @@ def main():
     print(f'Diagnostic bénéficiaires éligibles : {eligible_with_identity} avec nom/prénom, {no_beneficiary} sans identité exploitable, {unmatched_beneficiary} sans fiche civile correspondante.')
     print('Rapprochements sur commande à adhésion unique : '+str(payer_candidates)+'.')
     print('Correspondances connues trouvées : '+str(sum(1 for links in mapped.values() for link in links if link['itemId'] in KNOWN))+'.')
+    # Diagnostic ciblé sans publication de données personnelles ni modification des liaisons.
+    target=('nicolas','letessier')
+    target_uids=by_name.get(target,set())
+    print('Diagnostic Nicolas LETESSIER : fiche civile '+('présente' if len(target_uids)==1 else 'absente ou ambiguë')+'.')
+    for order in orders:
+        for item in order.get('items') or []:
+            if item.get('id') is None:continue
+            iid=safe_id(item['id'])
+            direct=beneficiary_name(item)
+            fallback=single_item_order_name(order,item)
+            if direct==target or fallback==target:
+                origin='bénéficiaire' if direct==target else 'payeur commande unique'
+                print('Diagnostic Nicolas LETESSIER : article '+iid+', identité trouvée dans '+origin+', état '+str(item.get('state') or 'Unknown')+'.')
+    print('Diagnostic Nicolas LETESSIER terminé : absence de ligne article = identité non présente dans les champs analysés.')
+
     print(f'Import Firestore terminé : {len(orders)} commandes, {count} articles, '+str(sum(len(o.get('payments') or []) for o in orders))+' paiements.')
     print('Aucune adhésion validée automatiquement. Aucune restriction appliquée.')
 
