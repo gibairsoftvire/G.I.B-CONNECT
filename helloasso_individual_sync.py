@@ -76,16 +76,28 @@ def civil_profiles():
     return result
 
 def beneficiary_name(item):
-    # Only fields explicitly identifying the beneficiary, never the order payer.
-    for candidate in (item.get('user'), item.get('beneficiary'), item.get('participant')):
-        if isinstance(candidate,dict):
-            first=normalize_name(candidate.get('firstName'))
-            last=normalize_name(candidate.get('lastName'))
-            if first and last: return (first,last)
-    # Some HelloAsso exports flatten the beneficiary fields on the item.
-    first=normalize_name(item.get('firstName'))
-    last=normalize_name(item.get('lastName'))
-    return (first,last) if first and last else None
+    """Return beneficiary identity only; never use order payer as beneficiary."""
+    user=item.get('user') or {}
+    if isinstance(user,dict):
+        first=normalize_name(user.get('firstName'))
+        last=normalize_name(user.get('lastName'))
+        if first and last:return (first,last)
+    # HelloAsso may expose the beneficiary's identity as custom fields on
+    # the membership item. Accept only explicitly named first/last fields.
+    fields=item.get('customFields') or []
+    if not isinstance(fields,list):return None
+    found={}
+    first_labels={'prenom','firstname','firstnames','givenname','givennames'}
+    last_labels={'nom','nomdefamille','lastname','familyname','surname'}
+    for field in fields:
+        if not isinstance(field,dict):continue
+        label=normalize_name(field.get('name') or field.get('label') or field.get('question') or '')
+        value=field.get('answer') or field.get('value') or ''
+        if isinstance(value,dict):value=value.get('value') or value.get('label') or ''
+        if not isinstance(value,str):continue
+        if label in first_labels:found['first']=normalize_name(value)
+        if label in last_labels:found['last']=normalize_name(value)
+    return (found['first'],found['last']) if found.get('first') and found.get('last') else None
 
 # Associations déjà vérifiées par le responsable dans Firebase / HelloAsso.
 KNOWN={
@@ -106,9 +118,9 @@ def main():
     mapped={}
     name_matches=0
     ambiguous=0
-    beneficiary_names=0
-    missing_civil_matches=0
-    missing_beneficiary_names=0
+    no_beneficiary=0
+    unmatched_beneficiary=0
+    eligible_with_identity=0
     now=datetime.datetime.now(datetime.timezone.utc).isoformat()
     for order in orders:
         oid=safe_id(order['id'])
@@ -136,16 +148,16 @@ def main():
                 elif not verified:
                     # Priorité au nom/prénom civil : adresse e-mail facultative.
                     name=beneficiary_name(item)
-                    if name: beneficiary_names+=1
-                    else: missing_beneficiary_names+=1
+                    if name:eligible_with_identity+=1
+                    else:no_beneficiary+=1
                     candidates=by_name.get(name,set()) if name else set()
-                    if name and not candidates: missing_civil_matches+=1
                     if len(candidates)==1:
                         assigned=next(iter(candidates));verified=True
                         name_matches+=1
                     elif len(candidates)>1:
                         ambiguous+=1
                     else:
+                        if name:unmatched_beneficiary+=1
                         # Ne pas relier par e-mail seule : elle peut être celle d'un tiers.
                         pass
             else:
@@ -187,7 +199,7 @@ def main():
         })
     print('Fiches membres synchronisées : '+str(len(mapped))+'. Aucun compte restreint.')
     print('Correspondances nom/prénom uniques : '+str(name_matches)+'. Identités ambiguës : '+str(ambiguous)+'.')
-    print('Diagnostic identités : '+str(sum(len(v) for v in by_name.values()))+' fiches civiles avec nom/prénom, '+str(beneficiary_names)+' articles avec identité bénéficiaire, '+str(missing_beneficiary_names)+' articles sans identité bénéficiaire, '+str(missing_civil_matches)+' identités sans fiche civile correspondante.')
+    print(f'Diagnostic bénéficiaires éligibles : {eligible_with_identity} avec nom/prénom, {no_beneficiary} sans identité exploitable, {unmatched_beneficiary} sans fiche civile correspondante.')
     print('Correspondances connues trouvées : '+str(sum(1 for links in mapped.values() for link in links if link['itemId'] in KNOWN))+'.')
     print(f'Import Firestore terminé : {len(orders)} commandes, {count} articles, '+str(sum(len(o.get('payments') or []) for o in orders))+' paiements.')
     print('Aucune adhésion validée automatiquement. Aucune restriction appliquée.')
