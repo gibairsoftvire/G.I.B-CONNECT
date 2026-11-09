@@ -1,0 +1,28 @@
+name: GIB - Annonces automatiques anniversaires et fêtes
+
+"on":
+  workflow_dispatch:
+  schedule:
+    - cron: '20 8 * * *'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  annonces:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authentification Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - name: Installer la bibliothèque Firestore
+        run: python3 -m pip install --quiet google-cloud-firestore
+      - name: Publier les annonces du jour
+        env:
+          GOOGLE_CLOUD_PROJECT: gib-connect
+        run: python3 gib_annonces_automatiques.py
