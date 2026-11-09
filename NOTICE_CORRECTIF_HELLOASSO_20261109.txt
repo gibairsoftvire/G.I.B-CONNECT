@@ -1,0 +1,15 @@
+G.I.B. CONNECT - Synchronisation HelloAsso toutes les 5 minutes
+
+Fichier actif : .github/workflows/helloasso-sync.yml
+- Cron GitHub Actions passe de 1 fois par jour a toutes les 5 minutes (UTC).
+- Protection contre les executions simultanees (concurrency).
+- Copie helloasso-sync.yml a la racine alignee pour eviter la confusion.
+- La logique de recuperation et d association des paiements reste inchangee.
+
+IMPORTANT : GitHub Actions ne garantit pas une execution exactement toutes les 5 minutes.
+Les workflows planifies peuvent etre retardes ou desactives par GitHub.
+Verifier Actions > GIB - Synchronisation cotisations HelloAsso > runs.
+Verifier que le dernier run est vert, notamment l etape de synchronisation individuelle.
+Si la synchronisation affiche une date recente mais qu une cotisation manque,
+verifier le rapprochement beneficiaire/fiche membre et la validation de paiement.
+Aucune verification en direct des secrets, permissions cloud ou donnees HelloAsso n a ete faite.
