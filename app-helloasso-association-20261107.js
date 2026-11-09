@@ -217,7 +217,7 @@ window.gibReady=(async()=>{
    notice('Compte bloqué et fiche archivée.');
  });
 
- $('membershipForm').onsubmit=action(async e=>{e.preventDefault();if(!admin())return;const f=new FormData(e.target),id=f.get('memberId'),period=f.get('period'),start=f.get('start'),end=f.get('end');if(end<start)throw Error('La fin doit suivre le début.');await F.setDoc(ref('memberships',id),{period,amount:period==='mensuelle'?15:150,method:f.get('method'),start,end,validated:f.has('validated')});$('membershipPanel').classList.add('hidden');});
+ $('membershipForm').onsubmit=action(async e=>{e.preventDefault();if(!admin())return;const f=new FormData(e.target),id=f.get('memberId'),period=f.get('period'),start=f.get('start'),end=f.get('end');if(end<start)throw Error('La fin doit suivre le début.');await F.setDoc(ref('memberships',id),{period,amount:f.get('method')==='exempt'?0:(period==='mensuelle'?15:150),method:f.get('method'),start,end,validated:f.get('method')==='exempt'?true:f.has('validated')});$('membershipPanel').classList.add('hidden');});
  $('cancelMembership').onclick=()=>$('membershipPanel').classList.add('hidden');
  $('catalogForm').onsubmit=action(async e=>{e.preventDefault();if(!admin())return;const f=new FormData(e.target),kind=f.get('kind'),value=String(f.get('label')).trim();if(!value)return;await F.runTransaction(db,async tx=>{const r=ref('settings','catalog'),snap=await tx.get(r),c=snap.data();if(c[kind].some(x=>x.toLocaleLowerCase('fr')===value.toLocaleLowerCase('fr')))throw Error('Cet intitulé existe déjà.');tx.update(r,{[kind]:[...c[kind],value]});});e.target.reset();});
  function administration(){if(canAdmin){mode='admin';$('role').value='admin';renderMode();}}

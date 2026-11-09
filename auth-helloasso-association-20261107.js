@@ -34,7 +34,7 @@ async function openApp(user,rights,token){
   Object.defineProperty(window,'gibSession',{value:session,configurable:true});
   window.gibBackend=Object.freeze({api,db,uid:user.uid,email:user.email||'membre',role:rights.role});
   try{window.gibPush=initPush({api,db,uid:user.uid,role:rights.role,getIdToken:()=>auth.currentUser?.getIdToken()});}catch(_){$('notificationStatus').textContent='Notifications indisponibles ; la connexion reste utilisable.';}
-  try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./app-helloasso-association-20261107.js';script.onload=resolve;script.onerror=reject;document.body.append(script);});await window.gibReady;loadedUid=user.uid;}catch(error){
+  try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./app-helloasso-association-20261107.js?v=14.3';script.onload=resolve;script.onerror=reject;document.body.append(script);});await window.gibReady;loadedUid=user.uid;}catch(error){
    console.error('[GIB CONNECT] Module secondaire indisponible :',error);
    // Le droit d'accès a déjà été confirmé par le document /access/{uid}.
    // Ne pas enfermer l'utilisateur dans l'écran de connexion lorsqu'un module
