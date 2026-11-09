@@ -1,0 +1,30 @@
+name: GIB - Cotisations J+15 (simulation securisee)
+"on":
+  workflow_dispatch:
+  schedule:
+    - cron: '45 8 * * *'
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install google-cloud-firestore
+      - name: Controle J+15 sans envoi par defaut
+        env:
+          GIB_COTISATIONS_SEND: 'false'
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+        run: python gib_relances_cotisations_v15.py
