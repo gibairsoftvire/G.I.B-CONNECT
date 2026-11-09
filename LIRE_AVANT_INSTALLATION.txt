@@ -1,0 +1,23 @@
+G.I.B. CONNECT V15 — CONTROLE DES COTISATIONS J+15
+
+BASE : export GitHub G.I.B-CONNECT-main(7).zip du 09/11/2026.
+Ce ZIP contient UNIQUEMENT deux fichiers à ajouter au dépôt :
+  gib_relances_cotisations_v15.py (racine)
+  .github/workflows/relances-cotisations-v15.yml
+
+INSTALLATION : téléverser les fichiers aux chemins indiqués. Les autres fichiers restent inchangés.
+GitHub Actions > GIB - Cotisations J+15 (simulation securisee) > Run workflow.
+Le programme est en SIMULATION : il ne transmet aucun e-mail et ne restreint aucun membre.
+
+Un dossier n'est éligible à une relance qu'après 15 jours, avec une date de fin valide,
+un impayé CONFIRME MANUELLEMENT (memberships/{uid}.unpaidConfirmed=true),
+et aucun paiement HelloAsso confirmé. Les comptes admins et membres archivés sont exclus.
+La détection HelloAsso agrégée ne suffit pas à prouver la période payée : contrôle humain requis.
+
+La possibilité d'envoyer les e-mails existe dans le code, mais NE DOIT PAS être activée
+avant vérification de l'adresse des membres, des autorisations Firestore et des données.
+La configuration SMTP GitHub est nécessaire pour les envois réels.
+
+AUCUNE RESTRICTION J+30 n'est intégrée : le contrôle des deux échéances mensuelles,
+les règles Firestore pour Général + MP admins et la levée après paiement restent à faire.
+N'activez pas GIB_COTISATIONS_SEND sans test et validation des données.
