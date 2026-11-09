@@ -1,0 +1,18 @@
+name: GIB - Diagnostic cotisations V15
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install google-cloud-firestore
+      - run: python gib_diagnostic_echeances_v15.py
