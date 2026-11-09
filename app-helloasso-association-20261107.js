@@ -251,9 +251,15 @@ window.gibReady=(async()=>{
  const confirmed=['Authorized','Captured','Paid','Succeeded'].some(k=>Number(states[k]||0)>0);
  // The current synchronization only provides aggregated statuses, not a validated
  // payment-to-membership-period reconciliation. Do not claim "paid" or punish.
+ if(c?.method==='exempt'){return {red:false,label:'Exempté de cotisation',review:true};}
  if(confirmed){return {red:false,label:'Paiement HelloAsso détecté — période de cotisation à vérifier',review:true};}
  if(!c||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(c.end||''))return {red:true,label:'Date de fin non renseignée — aucune restriction automatique'};
  const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ if(c.end<date){
+   const days=Math.floor((Date.parse(date+'T12:00:00Z')-Date.parse(c.end+'T12:00:00Z'))/86400000);
+   if(days>=30)return {red:true,label:'Cotisation expirée depuis '+days+' jours — contrôle du paiement et des échéances requis avant toute restriction'};
+   if(days>=15)return {red:true,label:'Cotisation expirée depuis '+days+' jours — contrôle de l’impayé requis avant e-mail J+15'};
+ }
  if(c.end<date && c.validated!==true)return {red:true,label:'Cotisation expirée — vérification du règlement nécessaire'};
  if(c.end<date)return {red:true,label:'Date de cotisation dépassée — renouvellement à vérifier'};
  return {red:false,label:''};

@@ -1,0 +1,48 @@
+{
+  "today": "2026-11-09",
+  "members": [
+    {
+      "id": "exempt",
+      "membership": {
+        "method": "exempt"
+      }
+    },
+    {
+      "id": "sans_date",
+      "membership": {}
+    },
+    {
+      "id": "helloasso",
+      "membership": {},
+      "helloasso_states": {
+        "Authorized": 1,
+        "Pending": 11
+      }
+    },
+    {
+      "id": "annuel_impaye",
+      "membership": {
+        "period": "annuelle",
+        "end": "2026-10-01"
+      },
+      "nonpayment_verified": true
+    },
+    {
+      "id": "mensuel_incomplet",
+      "membership": {
+        "period": "mensuelle",
+        "end": "2026-10-01"
+      },
+      "nonpayment_verified": true
+    },
+    {
+      "id": "mensuel_deux_echeances",
+      "membership": {
+        "period": "mensuelle",
+        "end": "2026-10-01"
+      },
+      "nonpayment_verified": true,
+      "two_due_installments_verified_unpaid": true
+    }
+  ]
+}
