@@ -1,0 +1,33 @@
+name: GIB - Relances sondages MP et e-mail
+"on":
+  workflow_dispatch:
+  schedule:
+    - cron: '15 8 * * *'
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  relances:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authentification Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install google-cloud-firestore
+      - name: Relancer les sondages
+        env:
+          GOOGLE_CLOUD_PROJECT: gib-connect
+          GIB_SENDER_UID: ${{ secrets.GIB_SENDER_UID }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+        run: python3 gib_relances_sondages.py
