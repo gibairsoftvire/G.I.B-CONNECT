@@ -21,7 +21,7 @@ service cloud.firestore {
    allow get: if signed() && (request.auth.uid == uid || owner());
    allow list: if owner();
    allow create: if valid() && (owner() || ownInvite());
-   allow update: if valid() && ((owner() && uid!=request.auth.uid && resource.data.role!='owner') || (resource.data.role=='member' && resource.data.enabled==true && request.resource.data.role=='moderator' && ownInvite()));
+   allow update: if valid() && ((owner() && uid!=request.auth.uid && resource.data.role!='owner') || (resource.data.role=='member' && resource.data.enabled==true && request.resource.data.role=='moderator' && ownInvite()) || (admin() && uid!=request.auth.uid && resource.data.role=='member' && resource.data.enabled==true && request.resource.data.role=='member' && request.resource.data.enabled==false && getAfter(/databases/$(database)/documents/archivedMembers/$(uid)).data.archived==true));
    allow delete: if owner() && uid!=request.auth.uid && resource.data.role!='owner';
   }
   match /moderators/{slot} {
@@ -40,9 +40,25 @@ service cloud.firestore {
    allow delete: if admin() && (resource.data.role=='member' || owner());
   }
   // Identité civile séparée : aucune lecture par les membres, même pour leur propre fiche.
+  match /memberBirthDates/{uid} {
+   allow get, list: if admin();
+   allow create, update: if admin() && exists(/databases/$(database)/documents/profiles/$(uid)) && request.resource.data.keys().hasOnly(['birthDate','updatedAt','updatedBy']) && request.resource.data.birthDate is string && (request.resource.data.birthDate=='' || request.resource.data.birthDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')) && request.resource.data.updatedBy==request.auth.uid && request.resource.data.updatedAt==request.time;
+   allow delete: if false;
+  }
+  match /archivedMembers/{targetUid} {
+   allow get, list: if enabled();
+   allow create: if admin() && targetUid!=request.auth.uid
+      && get(/databases/$(database)/documents/access/$(targetUid)).data.role=='member'
+      && getAfter(/databases/$(database)/documents/access/$(targetUid)).data.enabled==false
+      && request.resource.data.keys().hasOnly(['archived','archivedBy','archivedAt'])
+      && request.resource.data.archived==true
+      && request.resource.data.archivedBy==request.auth.uid
+      && request.resource.data.archivedAt==request.time;
+   allow update, delete: if false;
+  }
   match /memberCivil/{uid} {
    function validCivil(){return request.resource.data.keys().hasOnly(['lastName','firstName','updatedAt','updatedBy']) && request.resource.data.keys().hasAll(['lastName','firstName','updatedAt','updatedBy']) && request.resource.data.lastName is string && request.resource.data.lastName.size()>0 && request.resource.data.lastName.size()<=100 && request.resource.data.firstName is string && request.resource.data.firstName.size()>0 && request.resource.data.firstName.size()<=100 && request.resource.data.updatedBy==request.auth.uid && request.resource.data.updatedAt==request.time;}
-   allow get, list: if admin();
+   allow get, list: if enabled();
    allow create, update: if admin() && exists(/databases/$(database)/documents/profiles/$(uid)) && validCivil();
    allow delete: if false;
   }
