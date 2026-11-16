@@ -65,7 +65,7 @@ service cloud.firestore {
   match /memberships/{uid} {
    allow get: if enabled() && (admin() || uid==request.auth.uid);
    allow list: if admin();
-   allow create, update: if admin() && request.resource.data.keys().hasOnly(['period','amount','method','start','end','validated']) && request.resource.data.period in ['mensuelle','annuelle'] && request.resource.data.amount==(request.resource.data.period=='mensuelle'?15:150) && request.resource.data.method in ['especes','cheque','virement','helloasso'] && request.resource.data.start is string && request.resource.data.end is string && request.resource.data.end>=request.resource.data.start && request.resource.data.validated is bool;
+   allow create, update: if admin() && ((request.resource.data.keys().hasOnly(['period','amount','method','validated']) && request.resource.data.period=='exempt' && request.resource.data.method=='exempt' && request.resource.data.amount==0 && request.resource.data.validated==true) || (request.resource.data.keys().hasOnly(['period','amount','method','start','end','validated']) && request.resource.data.period in ['mensuelle','annuelle'] && request.resource.data.amount==(request.resource.data.period=='mensuelle'?15:150) && request.resource.data.method in ['especes','cheque','virement','helloasso'] && request.resource.data.start is string && request.resource.data.end is string && request.resource.data.end>=request.resource.data.start && request.resource.data.validated is bool));
   }
   match /restrictions/{uid} {
    allow get: if enabled() && (admin() || uid==request.auth.uid);
